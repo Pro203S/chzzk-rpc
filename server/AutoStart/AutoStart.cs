@@ -29,4 +29,32 @@ internal static class AutoStart
 
         return Task.CompletedTask;
     }
+
+    public static Task DisableAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            WindowsAutoStart autoStart = new("Discheese");
+            return autoStart.DisableAsync(cancellationToken);
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            LinuxAutoStart autoStart = new("discheese.service");
+            return autoStart.DisableAsync(cancellationToken);
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            MacOsAutoStart autoStart = new(
+                applicationId: "kr.pro203s.discheese"
+            );
+
+            return autoStart.DisableAsync(cancellationToken);
+        }
+
+        return Task.CompletedTask;
+    }
 }

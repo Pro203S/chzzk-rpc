@@ -19,10 +19,15 @@ internal sealed record ApplicationCommand(
             return new ApplicationCommand(processPath, []);
         }
 
-        string assemblyPath = Assembly.GetEntryAssembly()?.Location
+        string assemblyName = Assembly.GetEntryAssembly()?.GetName().Name
             ?? throw new InvalidOperationException(
-                "현재 애플리케이션 어셈블리 경로를 가져올 수 없습니다."
+                "현재 애플리케이션 어셈블리 이름을 가져올 수 없습니다."
             );
+
+        string assemblyPath = Path.Combine(
+            AppContext.BaseDirectory,
+            $"{assemblyName}.dll"
+        );
 
         return new ApplicationCommand(
             processPath,
