@@ -1,4 +1,6 @@
-﻿namespace DischeeseServer;
+﻿using DischeeseServer.AutoStart;
+
+namespace DischeeseServer;
 
 internal static class Program
 {
@@ -19,7 +21,7 @@ internal static class Program
 
         try
         {
-            await AutoStart.EnsureEnabledAsync(
+            await AutoStart.AutoStart.EnsureEnabledAsync(
                 cancellationTokenSource.Token
             );
         }

@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Security;
 using System.Text;
 
-namespace DischeeseServer;
+namespace DischeeseServer.AutoStart;
 
 public sealed class MacOsAutoStart
 {

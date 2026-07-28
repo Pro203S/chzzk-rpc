@@ -1,4 +1,4 @@
-namespace DischeeseServer;
+namespace DischeeseServer.AutoStart;
 
 internal static class AutoStart
 {

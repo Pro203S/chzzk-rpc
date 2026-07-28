@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace DischeeseServer;
+namespace DischeeseServer.AutoStart;
 
 public sealed class WindowsAutoStart
 {

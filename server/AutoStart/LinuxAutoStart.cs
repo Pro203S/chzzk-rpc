@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace DischeeseServer;
+namespace DischeeseServer.AutoStart;
 
 public sealed class LinuxAutoStart
 {
