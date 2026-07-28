@@ -3,7 +3,6 @@ dist
 *.local
 
 package-lock.json
-bun.lock
 
 obj/
 bin/
