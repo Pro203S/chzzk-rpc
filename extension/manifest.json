@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "Discheese",
+    "description": "치지직 시청 정보를 Rich Presence와 연결합니다.",
+    "version": "0.1.0",
+    "permissions": ["tabs", "webNavigation"],
+    "host_permissions": ["https://chzzk.naver.com/*"],
+    "background": {
+        "service_worker": "dist/assets/background.js",
+        "type": "module"
+    },
+    "action": {
+        "default_title": "Discheese",
+        "default_popup": "dist/popup.html"
+    }
+}

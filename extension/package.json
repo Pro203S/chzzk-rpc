@@ -1,0 +1,26 @@
+{
+    "name": "discheese",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "packageManager": "bun@1.3.3",
+    "scripts": {
+        "dev": "vite build --watch",
+        "build": "bun run typecheck && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit --pretty"
+    },
+    "dependencies": {
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8"
+    },
+    "devDependencies": {
+        "@types/chrome": "^0.2.2",
+        "@types/node": "^26.1.2",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.4",
+        "typescript": "~7.0.2",
+        "vite": "^8.1.5"
+    }
+}
