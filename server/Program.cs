@@ -1,4 +1,5 @@
-﻿using DischeeseServer.WebSocket;
+﻿using DischeeseServer.Discord;
+using DischeeseServer.WebSocket;
 
 namespace DischeeseServer;
 
@@ -23,6 +24,9 @@ internal static class Program
                 await AutoStart.AutoStart.DisableAsync();
             }
 
+            Logger.Log("Initializing Discord RPC...");
+            RPC.Initialize();
+
             int port = 58127;
             string? rawPortArg = Array.Find(args, v => v.StartsWith("--port="));
 
@@ -32,12 +36,11 @@ internal static class Program
             }
 
             Server server = new(port);
-
             await server.Listen();
 
             Logger.Log("Listening on port " + port);
 
-            for (;;) {}
+            for (; ; ) { }
         }
         catch (Exception ex)
         {
