@@ -7,6 +7,23 @@ internal sealed record ApplicationCommand(
     IReadOnlyList<string> Arguments
 )
 {
+    public string ApplicationPath =>
+        IsDotNetHost(FileName)
+            ? Arguments.FirstOrDefault() ?? FileName
+            : FileName;
+
+    public ApplicationCommand AppendArgument(string argument)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(argument);
+
+        return this with
+        {
+            Arguments = Arguments
+                .Append(argument)
+                .ToArray()
+        };
+    }
+
     public static ApplicationCommand GetCurrent()
     {
         string processPath = Environment.ProcessPath

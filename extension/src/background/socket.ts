@@ -1,18 +1,20 @@
-import type { PresencePayload } from "../shared/socket";
+import type { DiscordUser, PresencePayload } from "../shared/socket";
 
-export type ReceivedEvent = "pong" | "done" | "error";
-export type SentEvent = "ping" | "presence" | "clear";
+export type ReceivedEvent = "pong" | "done" | "error" | "user";
+export type SentEvent = "ping" | "presence" | "clear" | "user";
 
 interface ReceivedEventPayloads {
     pong: undefined;
     done: undefined;
     error: string;
+    user: DiscordUser | null;
 }
 
 interface SentEventPayloads {
     ping: undefined;
     presence: PresencePayload;
     clear: undefined;
+    user: undefined;
 }
 
 type Listener<Event extends ReceivedEvent> =
@@ -190,6 +192,22 @@ export default class Socket {
             return;
         }
 
+        if (messageEvent.data === "null") {
+            this.emit("user", null);
+            return;
+        }
+
+        const user = messageEvent.data.split("\u0007");
+
+        if (user.length === 3) {
+            this.emit("user", {
+                username: user[0],
+                displayName: user[1],
+                avatarUrl: user[2],
+            });
+            return;
+        }
+
         this.emit("error", `알 수 없는 서버 응답입니다: ${messageEvent.data}`);
     };
 
@@ -206,7 +224,11 @@ export default class Socket {
 
     private emit(event: "pong" | "done"): void;
     private emit(event: "error", payload: string): void;
-    private emit(event: ReceivedEvent, payload?: string): void {
+    private emit(event: "user", payload: DiscordUser | null): void;
+    private emit(
+        event: ReceivedEvent,
+        payload?: string | DiscordUser | null,
+    ): void {
         const listeners = this.listeners.get(event);
 
         if (!listeners) {
@@ -215,7 +237,16 @@ export default class Socket {
 
         for (const listener of listeners) {
             if (event === "error") {
-                (listener as (message: string) => void)(payload ?? "");
+                (listener as (message: string) => void)(
+                    typeof payload === "string" ? payload : "",
+                );
+                continue;
+            }
+
+            if (event === "user") {
+                (listener as (user: DiscordUser | null) => void)(
+                    typeof payload === "object" ? payload : null,
+                );
                 continue;
             }
 

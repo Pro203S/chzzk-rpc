@@ -2,6 +2,8 @@ namespace DischeeseServer;
 
 public class Logger
 {
+    public static bool WriteToConsole { get; set; } = true;
+
     public static string LogPath
     {
         get
@@ -28,7 +30,11 @@ public class Logger
 
         string logContent = $"[{DateTime.Now:yyyy/MM/dd HH:mm:ss}] {str}{Environment.NewLine}";
 
-        Console.Write(logContent);
+        if (WriteToConsole)
+        {
+            Console.Write(logContent);
+        }
+
         File.AppendAllText(logPath, logContent);
     }
 }

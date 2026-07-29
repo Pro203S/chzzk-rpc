@@ -1,4 +1,5 @@
 import type {
+    DiscordUser,
     PresencePayload,
     SocketRequest,
     SocketResponse,
@@ -32,9 +33,10 @@ function notifyStatus(): void {
     void chrome.runtime.sendMessage(message).catch(() => {});
 }
 
-function success(): SocketResponse {
+function success(user?: DiscordUser | null): SocketResponse {
     return {
         ok: true,
+        ...(user !== undefined ? { user } : {}),
         ...getStatus(),
     };
 }
@@ -192,6 +194,38 @@ function ping(): Promise<void> {
     });
 }
 
+function getUser(): Promise<DiscordUser | null> {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error("Discheese 서버의 응답 시간이 초과되었습니다."));
+        }, RESPONSE_TIMEOUT);
+
+        const offUser = socket.on("user", (user) => {
+            cleanup();
+            resolve(user);
+        });
+
+        const offError = socket.on("error", (message) => {
+            cleanup();
+            reject(new Error(message));
+        });
+
+        const cleanup = () => {
+            clearTimeout(timeout);
+            offUser();
+            offError();
+        };
+
+        try {
+            socket.send("user");
+        } catch (error) {
+            cleanup();
+            reject(error);
+        }
+    });
+}
+
 function isPresencePayload(value: unknown): value is PresencePayload {
     if (!value || typeof value !== "object") {
         return false;
@@ -223,6 +257,7 @@ function isSocketRequest(value: unknown): value is SocketRequest {
         case "socket:connect":
         case "socket:disconnect":
         case "socket:ping":
+        case "socket:user":
         case "socket:clearPresence":
             return true;
         case "socket:reconnect":
@@ -251,6 +286,8 @@ async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
             case "socket:ping":
                 await ping();
                 break;
+            case "socket:user":
+                return success(await getUser());
             case "socket:setPresence":
                 await setPresence(request.payload);
                 break;
@@ -266,8 +303,7 @@ async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
 }
 
 export function registerSocket(): void {
-    socket.on("error", (message) => {
-        console.error("[Discheese] WebSocket 오류:", message);
+    socket.on("error", () => {
         notifyStatus();
 
         if (!socket.connected) {

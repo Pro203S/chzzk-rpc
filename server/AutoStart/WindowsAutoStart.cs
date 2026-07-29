@@ -28,7 +28,9 @@ public sealed class WindowsAutoStart
         cancellationToken.ThrowIfCancellationRequested();
 
         string commandLine = CreateCommandLine(
-            ApplicationCommand.GetCurrent()
+            ApplicationCommand
+                .GetCurrent()
+                .AppendArgument("--background")
         );
 
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(

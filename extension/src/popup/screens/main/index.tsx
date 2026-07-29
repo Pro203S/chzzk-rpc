@@ -7,11 +7,14 @@ export default function Main() {
     const socket = useSocket();
 
     useEffect(() => {
+        (async () => {
+
+        })();
     }, []);
 
     return <div className={css.container}>
         <Header />
-        <div className={css.connection}>
+        <div className={css.discord}>
 
         </div>
     </div>;

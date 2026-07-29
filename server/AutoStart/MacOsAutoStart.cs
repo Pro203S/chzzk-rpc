@@ -37,12 +37,11 @@ public sealed class MacOsAutoStart
             return;
         }
 
-        string executablePath = Environment.ProcessPath
-            ?? throw new InvalidOperationException(
-                "현재 실행 파일 경로를 가져올 수 없습니다."
-            );
+        ApplicationCommand command = ApplicationCommand
+            .GetCurrent()
+            .AppendArgument("--background");
 
-        string desiredPlist = CreatePlist(executablePath);
+        string desiredPlist = CreatePlist(command);
 
         bool requiresRegistration =
             !File.Exists(PlistPath) ||
@@ -128,7 +127,7 @@ public sealed class MacOsAutoStart
         );
     }
 
-    private string CreatePlist(string executablePath)
+    private string CreatePlist(ApplicationCommand command)
     {
         string homeDirectory = Environment.GetFolderPath(
             Environment.SpecialFolder.UserProfile
@@ -144,8 +143,17 @@ public sealed class MacOsAutoStart
         Directory.CreateDirectory(logDirectory);
 
         string workingDirectory =
-            Path.GetDirectoryName(executablePath)
+            Path.GetDirectoryName(command.ApplicationPath)
             ?? homeDirectory;
+
+        string programArguments = string.Join(
+            Environment.NewLine,
+            new[] { command.FileName }
+                .Concat(command.Arguments)
+                .Select(argument =>
+                    $"            <string>{EscapeXml(argument)}</string>"
+                )
+        );
 
         return $$"""
         <?xml version="1.0" encoding="UTF-8"?>
@@ -159,7 +167,7 @@ public sealed class MacOsAutoStart
 
             <key>ProgramArguments</key>
             <array>
-                <string>{{EscapeXml(executablePath)}}</string>
+        {{programArguments}}
             </array>
 
             <key>RunAtLoad</key>

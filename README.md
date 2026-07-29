@@ -18,6 +18,11 @@ Discheese(디스치즈)는 치지직 방송을 Discord의 RPC에 표시해주는
 ### 서버 자동 실행
 
 컴퓨터를 켤 때 서버를 자동 실행하려면 서버를 `--register-autostart` 인수와 함께 실행하세요.
+등록된 서버는 별도의 콘솔 창 없이 백그라운드에서 실행됩니다.
+
+- Windows: 창 없는 애플리케이션으로 실행
+- Linux: 사용자 `systemd` 서비스로 실행
+- macOS: 백그라운드 `LaunchAgent`로 실행
 
 자동 실행을 삭제하려면 서버를 `--unregister-autostart` 인수와 함께 실행하세요.
 

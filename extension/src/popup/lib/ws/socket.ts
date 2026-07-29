@@ -1,11 +1,16 @@
 import type {
+    DiscordUser,
     PresencePayload,
     SocketRequest,
     SocketResponse,
     SocketStatus,
 } from "../../../shared/socket";
 
-async function send(request: SocketRequest): Promise<SocketStatus> {
+type SuccessfulSocketResponse = Extract<SocketResponse, { ok: true }>;
+
+async function request(
+    request: SocketRequest,
+): Promise<SuccessfulSocketResponse> {
     const response = await chrome.runtime.sendMessage(request) as
         SocketResponse | undefined;
 
@@ -16,6 +21,12 @@ async function send(request: SocketRequest): Promise<SocketStatus> {
     if (!response.ok) {
         throw new Error(response.error);
     }
+
+    return response;
+}
+
+async function send(requestData: SocketRequest): Promise<SocketStatus> {
+    const response = await request(requestData);
 
     return {
         connected: response.connected,
@@ -53,6 +64,14 @@ export const backgroundSocket = {
         return send({
             type: "socket:ping",
         });
+    },
+
+    async user(): Promise<DiscordUser | null> {
+        const response = await request({
+            type: "socket:user",
+        });
+
+        return response.user ?? null;
     },
 
     setPresence(payload: PresencePayload): Promise<SocketStatus> {

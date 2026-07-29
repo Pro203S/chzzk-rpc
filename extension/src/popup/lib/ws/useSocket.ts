@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
+    DiscordUser,
     PresencePayload,
     SocketStatus,
     SocketStatusChanged,
@@ -47,6 +48,10 @@ export default function useSocket() {
         return run(() => backgroundSocket.ping());
     }, [run]);
 
+    const user = useCallback((): Promise<DiscordUser | null> => {
+        return backgroundSocket.user();
+    }, []);
+
     const setPresence = useCallback((payload: PresencePayload) => {
         return run(() => backgroundSocket.setPresence(payload));
     }, [run]);
@@ -87,6 +92,7 @@ export default function useSocket() {
         reconnect,
         disconnect,
         ping,
+        user,
         setPresence,
         clearPresence,
     };

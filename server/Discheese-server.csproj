@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <!--
+        Windows GUI subsystem으로 빌드하면 로그인 자동 실행 시 콘솔 창이
+        생성되지 않는다. 다른 OS에서는 일반 실행 파일처럼 동작한다.
+        -->
+        <OutputType>WinExe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>DischeeseServer</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>

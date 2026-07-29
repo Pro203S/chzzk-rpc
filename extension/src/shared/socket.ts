@@ -5,6 +5,12 @@ export interface PresencePayload {
     profileImageUrl: string;
 }
 
+export interface DiscordUser {
+    username: string;
+    displayName: string;
+    avatarUrl: string;
+}
+
 export interface SocketStatus {
     connected: boolean;
     port: number;
@@ -33,6 +39,9 @@ export type SocketRequest =
         type: "socket:ping";
     }
     | {
+        type: "socket:user";
+    }
+    | {
         type: "socket:setPresence";
         payload: PresencePayload;
     }
@@ -43,6 +52,7 @@ export type SocketRequest =
 export type SocketResponse =
     | ({
         ok: true;
+        user?: DiscordUser | null;
     } & SocketStatus)
     | ({
         ok: false;

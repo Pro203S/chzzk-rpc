@@ -7,6 +7,8 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
+        Logger.WriteToConsole = !args.Contains("--background");
+
         try
         {
             Logger.Log("Starting Discheese server...");
@@ -40,7 +42,7 @@ internal static class Program
 
             Logger.Log("Listening on port " + port);
 
-            for (; ; ) { }
+            await Task.Delay(Timeout.Infinite);
         }
         catch (Exception ex)
         {

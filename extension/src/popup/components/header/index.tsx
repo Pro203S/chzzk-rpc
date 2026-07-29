@@ -11,7 +11,11 @@ export default function Header() {
             <img src="./icons/icon128.png" draggable={false} />
             <span>Discheese</span>
         </div>
-        <button className={css.status} data-connected={socket.connected ? "yes" : "no"}>
+        <button
+            title={socket.connected ? "서버 연결됨" : "서버 연결 안됨"}
+            className={css.status}
+            data-connected={socket.connected ? "yes" : "no"}
+        >
             <FontAwesomeIcon icon={faLink} />
         </button>
     </div>;

@@ -107,9 +107,7 @@ async function initialize(): Promise<void> {
 export function register(): void {
     const ready = Promise.resolve()
         .then(initialize)
-        .catch((error: unknown) => {
-            console.error("[Discheese] 초기화 실패", error);
-        });
+        .catch(() => {});
 
     const afterReady = (callback: () => void): void => {
         void ready.then(callback);

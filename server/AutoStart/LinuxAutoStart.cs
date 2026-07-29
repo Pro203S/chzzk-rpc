@@ -42,7 +42,10 @@ public sealed class LinuxAutoStart
             return;
         }
 
-        ApplicationCommand command = ApplicationCommand.GetCurrent();
+        ApplicationCommand command = ApplicationCommand
+            .GetCurrent()
+            .AppendArgument("--background");
+
         string desiredService = CreateService(command);
 
         bool serviceChanged =
@@ -108,11 +111,8 @@ public sealed class LinuxAutoStart
 
     private string CreateService(ApplicationCommand command)
     {
-        string applicationPath = command.Arguments.FirstOrDefault()
-            ?? command.FileName;
-
         string workingDirectory =
-            Path.GetDirectoryName(applicationPath)
+            Path.GetDirectoryName(command.ApplicationPath)
             ?? Environment.GetFolderPath(
                 Environment.SpecialFolder.UserProfile
             );
@@ -136,6 +136,8 @@ public sealed class LinuxAutoStart
         WorkingDirectory={EscapeSystemdArgument(workingDirectory)}
         Restart=on-failure
         RestartSec=5
+        StandardOutput=journal
+        StandardError=journal
 
         [Install]
         WantedBy=default.target
