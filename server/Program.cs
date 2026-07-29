@@ -1,4 +1,6 @@
-﻿namespace DischeeseServer;
+﻿using DischeeseServer.WebSocket;
+
+namespace DischeeseServer;
 
 internal static class Program
 {
@@ -6,11 +8,42 @@ internal static class Program
     {
         try
         {
-            await AutoStart.AutoStart.EnsureEnabledAsync();
+            Logger.Log("Starting Discheese server...");
+
+            Logger.Log("Got arguments: " + string.Join(',', args));
+            if (args.Contains("--register-autostart"))
+            {
+                Logger.Log("Registering AutoStart...");
+                await AutoStart.AutoStart.EnsureEnabledAsync();
+            }
+
+            if (args.Contains("--unregister-autostart"))
+            {
+                Logger.Log("Unregistering AutoStart...");
+                await AutoStart.AutoStart.DisableAsync();
+            }
+
+            int port = 58127;
+            string? rawPortArg = Array.Find(args, v => v.StartsWith("--port="));
+
+            if (!string.IsNullOrEmpty(rawPortArg))
+            {
+                port = Convert.ToInt32(rawPortArg.Split("=")[1]);
+            }
+
+            Server server = new(port);
+
+            await server.Listen();
+
+            Logger.Log("Listening on port " + port);
+
+            for (;;) {}
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"자동 실행 등록 실패: {exception}");
+            Logger.Log("An error occurred.");
+            Logger.Log(ex.Message);
+            Logger.Log(ex.StackTrace ?? "(Stack trace not available)");
         }
     }
 }

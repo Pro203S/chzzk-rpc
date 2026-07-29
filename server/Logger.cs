@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace DischeeseServer;
 
 public class Logger
@@ -26,9 +28,9 @@ public class Logger
             string.Format("discheese-{0}.log", DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss"))
         );
 
-        File.AppendAllText(
-            logPath,
-            $"[{DateTimeOffset.Now}] {str}{Environment.NewLine}"
-        );
+        string logContent = $"[{DateTimeOffset.Now}] {str}{Environment.NewLine}";
+
+        Console.Write(logContent);
+        File.AppendAllText(logPath, logContent);
     }
 }
