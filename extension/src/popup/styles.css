@@ -1,0 +1,24 @@
+@font-face {
+    font-family: "Pretendard";
+    src: url("/PretendardVariable.ttf") format("truetype");
+    font-weight: 45 920;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    font-family: "Pretendard", sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+* {
+    font-family: inherit;
+}
+
+html,
+body {
+    margin: 0;
+
+    background-color: #000000;
+}
