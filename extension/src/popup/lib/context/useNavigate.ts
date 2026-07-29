@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export type ScreenName = "main" | "error" | "settings";
+export type ScreenName = "main" | "settings";
 
 export const NavigateContext = createContext<React.Dispatch<React.SetStateAction<ScreenName>> | null>(null);
 

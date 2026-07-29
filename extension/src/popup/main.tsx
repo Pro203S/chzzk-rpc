@@ -2,7 +2,6 @@ import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { useState } from "react";
 import { NavigateContext, ScreenName } from "./lib/context/useNavigate";
-import Error from "./screens/error";
 import Main from "./screens/main";
 import Settings from "./screens/settings";
 
@@ -13,7 +12,6 @@ function App() {
         {(() => {
             switch (screen) {
                 case "main": return <Main />;
-                case "error": return <Error />;
                 case "settings": return <Settings />;
             }
         })()}
