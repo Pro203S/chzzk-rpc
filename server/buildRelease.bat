@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set PROJECT=.\jaeminlang\jaeminlang.csproj
+set PROJECT=.\Discheese-server.csproj
 set CONFIG=Release
 
 if not exist publish mkdir publish

@@ -6,3 +6,6 @@ package-lock.json
 
 obj/
 bin/
+
+publish/
+artifacts/
