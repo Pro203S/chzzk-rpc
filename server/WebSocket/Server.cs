@@ -198,6 +198,31 @@ public class Server
                     continue;
                 }
 
+                if (message == "user")
+                {
+                    var currentUser = RPC.rpc.CurrentUser;
+                    if (currentUser == null)
+                    {
+                        await webSocket.SendAsync(
+                            Encoding.UTF8.GetBytes("null"),
+                            WebSocketMessageType.Text,
+                            true,
+                            CancellationToken.None
+                        );
+                        continue;
+                    }
+
+                    await webSocket.SendAsync(
+                        Encoding.UTF8.GetBytes(
+                            $"{currentUser.Username}\u0007{currentUser.DisplayName}\u0007{currentUser.GetAvatarURL(currentUser.IsAvatarAnimated ? User.AvatarFormat.GIF : User.AvatarFormat.PNG)}"
+                        ),
+                        WebSocketMessageType.Text,
+                        true,
+                        CancellationToken.None
+                    );
+                    continue;
+                }
+
                 await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid command", CancellationToken.None);
                 Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1007)");
                 continue;
