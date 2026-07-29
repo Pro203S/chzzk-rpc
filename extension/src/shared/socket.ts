@@ -20,6 +20,9 @@ export type SocketRequest =
         type: "socket:status";
     }
     | {
+        type: "socket:connect";
+    }
+    | {
         type: "socket:reconnect";
         port?: number;
     }

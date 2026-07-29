@@ -31,6 +31,10 @@ export default function useSocket() {
         return run(() => backgroundSocket.status());
     }, [run]);
 
+    const connect = useCallback(() => {
+        return run(() => backgroundSocket.connect());
+    }, [run]);
+
     const reconnect = useCallback((port?: number) => {
         return run(() => backgroundSocket.reconnect(port));
     }, [run]);
@@ -79,6 +83,7 @@ export default function useSocket() {
         ...status,
         error,
         refresh,
+        connect,
         reconnect,
         disconnect,
         ping,

@@ -8,10 +8,13 @@ import type {
 import Socket from "./socket";
 
 const KEEP_ALIVE_INTERVAL = 20_000;
+const RECONNECT_INTERVAL = 1_000;
 const RESPONSE_TIMEOUT = 10_000;
 
 const socket = new Socket();
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectEnabled = false;
 
 function getStatus(): SocketStatus {
     return {
@@ -53,6 +56,35 @@ function stopKeepAlive(): void {
     keepAliveTimer = null;
 }
 
+function stopReconnect(): void {
+    if (reconnectTimer === null) {
+        return;
+    }
+
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+}
+
+function scheduleReconnect(): void {
+    if (
+        !reconnectEnabled ||
+        socket.connected ||
+        reconnectTimer !== null
+    ) {
+        return;
+    }
+
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+
+        if (!reconnectEnabled || socket.connected) {
+            return;
+        }
+
+        void connect().catch(() => {});
+    }, RECONNECT_INTERVAL);
+}
+
 function startKeepAlive(): void {
     stopKeepAlive();
 
@@ -62,17 +94,29 @@ function startKeepAlive(): void {
         } catch {
             stopKeepAlive();
             notifyStatus();
+            scheduleReconnect();
         }
     }, KEEP_ALIVE_INTERVAL);
 }
 
 async function connect(): Promise<void> {
-    await socket.connect();
-    startKeepAlive();
-    notifyStatus();
+    reconnectEnabled = true;
+    stopReconnect();
+
+    try {
+        await socket.connect();
+        startKeepAlive();
+        notifyStatus();
+    } catch (error) {
+        notifyStatus();
+        scheduleReconnect();
+        throw error;
+    }
 }
 
 async function reconnect(port?: number): Promise<void> {
+    reconnectEnabled = true;
+    stopReconnect();
     stopKeepAlive();
     socket.disconnect();
 
@@ -85,6 +129,14 @@ async function reconnect(port?: number): Promise<void> {
     }
 
     await connect();
+}
+
+function disconnect(): void {
+    reconnectEnabled = false;
+    stopReconnect();
+    stopKeepAlive();
+    socket.disconnect();
+    notifyStatus();
 }
 
 function waitForResponse(
@@ -168,6 +220,7 @@ function isSocketRequest(value: unknown): value is SocketRequest {
 
     switch (request.type) {
         case "socket:status":
+        case "socket:connect":
         case "socket:disconnect":
         case "socket:ping":
         case "socket:clearPresence":
@@ -186,13 +239,14 @@ async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
         switch (request.type) {
             case "socket:status":
                 break;
+            case "socket:connect":
+                await connect();
+                break;
             case "socket:reconnect":
                 await reconnect(request.port);
                 break;
             case "socket:disconnect":
-                stopKeepAlive();
-                socket.disconnect();
-                notifyStatus();
+                disconnect();
                 break;
             case "socket:ping":
                 await ping();
@@ -215,6 +269,11 @@ export function registerSocket(): void {
     socket.on("error", (message) => {
         console.error("[Discheese] WebSocket 오류:", message);
         notifyStatus();
+
+        if (!socket.connected) {
+            stopKeepAlive();
+            scheduleReconnect();
+        }
     });
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -226,8 +285,5 @@ export function registerSocket(): void {
         return true;
     });
 
-    void connect().catch((error: unknown) => {
-        console.error("[Discheese] WebSocket 연결 실패:", error);
-        notifyStatus();
-    });
+    void connect().catch(() => {});
 }

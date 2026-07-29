@@ -30,6 +30,12 @@ export const backgroundSocket = {
         });
     },
 
+    connect(): Promise<SocketStatus> {
+        return send({
+            type: "socket:connect",
+        });
+    },
+
     reconnect(port?: number): Promise<SocketStatus> {
         return send({
             type: "socket:reconnect",
