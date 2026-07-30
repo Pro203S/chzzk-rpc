@@ -1,6 +1,13 @@
 import { register } from "./background/register";
 import { registerSocket } from "./background/registerSocket";
 
-console.log("[Discheese] background service worker 시작");
+self.addEventListener("error", (event) => {
+    event.preventDefault();
+});
+
+self.addEventListener("unhandledrejection", (event) => {
+    event.preventDefault();
+});
+
 registerSocket();
 register();

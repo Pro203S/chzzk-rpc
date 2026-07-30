@@ -223,6 +223,17 @@ public class Server
                     continue;
                 }
 
+                if (message == "version")
+                {
+                    await webSocket.SendAsync(
+                        Encoding.UTF8.GetBytes(Program.Version),
+                        WebSocketMessageType.Text,
+                        true,
+                        CancellationToken.None
+                    );
+                    continue;
+                }
+
                 await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid command", CancellationToken.None);
                 Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1007)");
                 continue;

@@ -22,7 +22,6 @@ export default function useSocket() {
                 setError(null);
             } catch (reason) {
                 setError(reason instanceof Error ? reason.message : String(reason));
-                throw reason;
             }
         },
         [],
@@ -48,8 +47,15 @@ export default function useSocket() {
         return run(() => backgroundSocket.ping());
     }, [run]);
 
-    const user = useCallback((): Promise<DiscordUser | null> => {
-        return backgroundSocket.user();
+    const user = useCallback(async (): Promise<DiscordUser | null> => {
+        try {
+            const nextUser = await backgroundSocket.user();
+            setError(null);
+            return nextUser;
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : String(reason));
+            return null;
+        }
     }, []);
 
     const setPresence = useCallback((payload: PresencePayload) => {

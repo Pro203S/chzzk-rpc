@@ -5,6 +5,14 @@ import { NavigateContext, ScreenName } from "./lib/context/useNavigate";
 import Main from "./screens/main";
 import Settings from "./screens/settings";
 
+window.addEventListener("error", (event) => {
+    event.preventDefault();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+    event.preventDefault();
+});
+
 function App() {
     const [screen, setScreen] = useState<ScreenName>("main");
 
@@ -18,4 +26,8 @@ function App() {
     </NavigateContext.Provider>
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!, {
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+    onUncaughtError: () => {},
+}).render(<App />);

@@ -4,11 +4,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
+const silentConsole = Object.fromEntries(
+    ["debug", "error", "info", "log", "trace", "warn"].map((method) => [
+        `console.${method}`,
+        "(() => {})",
+    ]),
+);
 
 export default defineConfig({
     "base": "./",
     "publicDir": "public",
     "plugins": [react()],
+    "define": silentConsole,
     "build": {
         "outDir": "dist",
         "emptyOutDir": true,

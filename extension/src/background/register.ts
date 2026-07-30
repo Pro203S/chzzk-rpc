@@ -1,6 +1,5 @@
 import { handleChzzkEntered } from "./handlers/handleChzzkEntered";
 import { handleChzzkLeft } from "./handlers/handleChzzkLeft";
-import { handleChzzkNavigated } from "./handlers/handleChzzkNavigated";
 import type { ChzzkEvent } from "./types";
 import { isChzzkUrl } from "./url";
 
@@ -12,7 +11,7 @@ function saveTabUrls(): void {
         Array.from(tabUrls, ([tabId, url]) => [String(tabId), url]),
     );
 
-    void chrome.storage.session.set({ [STORAGE_KEY]: value });
+    void chrome.storage.session.set({ [STORAGE_KEY]: value }).catch(() => {});
 }
 
 async function restoreTabUrls(): Promise<void> {
@@ -61,10 +60,6 @@ function handleUrlChange(tabId: number, url: string): void {
         handleChzzkLeft(event);
         return;
     }
-
-    if (wasOnChzzk && isOnChzzk) {
-        handleChzzkNavigated(event);
-    }
 }
 
 function handleTabClosed(tabId: number): void {
@@ -110,7 +105,7 @@ export function register(): void {
         .catch(() => {});
 
     const afterReady = (callback: () => void): void => {
-        void ready.then(callback);
+        void ready.then(callback).catch(() => {});
     };
 
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {

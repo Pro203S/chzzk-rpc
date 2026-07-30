@@ -3,3 +3,40 @@
     display: flex;
     flex-direction: column;
 }
+
+.error {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 7.5px;
+    border: #ffae44 solid 1px;
+}
+
+.error svg {
+    color: #ffae44;
+    font-size: 24px;
+    margin: auto 0;
+}
+
+.error .texts {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.error .texts .main {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.error .texts .sub {
+    color: #9a9a9a;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.error .texts .sub:hover {
+    text-decoration: underline;
+}

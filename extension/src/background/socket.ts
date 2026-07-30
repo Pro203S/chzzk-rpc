@@ -29,10 +29,13 @@ type SendArguments<Event extends SentEvent> =
 
 type StoredListener = (...args: never[]) => void;
 
+const SERVER_PROBE_TIMEOUT = 1_000;
+
 export default class Socket {
     private readonly listeners = new Map<ReceivedEvent, Set<StoredListener>>();
     private webSocket: WebSocket | null = null;
     private connection: Promise<void> | null = null;
+    private probeController: AbortController | null = null;
 
     public constructor(public port: number = 58127) {}
 
@@ -49,39 +52,7 @@ export default class Socket {
             return this.connection;
         }
 
-        const webSocket = new WebSocket(`ws://localhost:${this.port}/`);
-        this.webSocket = webSocket;
-
-        webSocket.addEventListener("message", this.handleMessage);
-        webSocket.addEventListener("error", this.handleError);
-        webSocket.addEventListener("close", this.handleClose);
-
-        const connection = new Promise<void>((resolve, reject) => {
-            const handleOpen = () => {
-                removeConnectionListeners();
-                resolve();
-            };
-
-            const handleConnectionError = () => {
-                removeConnectionListeners();
-                reject(new Error(`포트 ${this.port}의 Discheese 서버에 연결하지 못했습니다.`));
-            };
-
-            const handleConnectionClose = () => {
-                removeConnectionListeners();
-                reject(new Error("Discheese 서버에 연결되기 전에 연결이 종료되었습니다."));
-            };
-
-            const removeConnectionListeners = () => {
-                webSocket.removeEventListener("open", handleOpen);
-                webSocket.removeEventListener("error", handleConnectionError);
-                webSocket.removeEventListener("close", handleConnectionClose);
-            };
-
-            webSocket.addEventListener("open", handleOpen);
-            webSocket.addEventListener("error", handleConnectionError);
-            webSocket.addEventListener("close", handleConnectionClose);
-        });
+        const connection = this.open();
 
         this.connection = connection;
 
@@ -100,6 +71,8 @@ export default class Socket {
         const webSocket = this.webSocket;
 
         this.connection = null;
+        this.probeController?.abort();
+        this.probeController = null;
 
         if (!webSocket) {
             return;
@@ -116,6 +89,81 @@ export default class Socket {
         ) {
             webSocket.close(1000, "Disconnected by client");
         }
+    }
+
+    private async open(): Promise<void> {
+        const probeController = new AbortController();
+        const probeTimeout = setTimeout(
+            () => probeController.abort(),
+            SERVER_PROBE_TIMEOUT,
+        );
+
+        this.probeController = probeController;
+
+        try {
+            await fetch(`http://localhost:${this.port}/`, {
+                method: "HEAD",
+                mode: "no-cors",
+                cache: "no-store",
+                signal: probeController.signal,
+            });
+        } catch {
+            throw new Error(
+                `포트 ${this.port}의 Discheese 서버에 연결하지 못했습니다.`,
+            );
+        } finally {
+            clearTimeout(probeTimeout);
+
+            if (this.probeController === probeController) {
+                this.probeController = null;
+            }
+        }
+
+        if (probeController.signal.aborted || this.connection === null) {
+            throw new Error("Discheese 서버 연결이 취소되었습니다.");
+        }
+
+        const webSocket = new WebSocket(`ws://localhost:${this.port}/`);
+        this.webSocket = webSocket;
+
+        webSocket.addEventListener("message", this.handleMessage);
+        webSocket.addEventListener("error", this.handleError);
+        webSocket.addEventListener("close", this.handleClose);
+
+        await new Promise<void>((resolve, reject) => {
+            const handleOpen = () => {
+                removeConnectionListeners();
+                resolve();
+            };
+
+            const handleConnectionError = () => {
+                removeConnectionListeners();
+                reject(
+                    new Error(
+                        `포트 ${this.port}의 Discheese 서버에 연결하지 못했습니다.`,
+                    ),
+                );
+            };
+
+            const handleConnectionClose = () => {
+                removeConnectionListeners();
+                reject(
+                    new Error(
+                        "Discheese 서버에 연결되기 전에 연결이 종료되었습니다.",
+                    ),
+                );
+            };
+
+            const removeConnectionListeners = () => {
+                webSocket.removeEventListener("open", handleOpen);
+                webSocket.removeEventListener("error", handleConnectionError);
+                webSocket.removeEventListener("close", handleConnectionClose);
+            };
+
+            webSocket.addEventListener("open", handleOpen);
+            webSocket.addEventListener("error", handleConnectionError);
+            webSocket.addEventListener("close", handleConnectionClose);
+        });
     }
 
     public on<Event extends ReceivedEvent>(

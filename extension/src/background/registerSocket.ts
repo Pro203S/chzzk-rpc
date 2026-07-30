@@ -317,7 +317,7 @@ export function registerSocket(): void {
             return false;
         }
 
-        void handleRequest(message).then(sendResponse);
+        void handleRequest(message).then(sendResponse).catch(() => {});
         return true;
     });
 
