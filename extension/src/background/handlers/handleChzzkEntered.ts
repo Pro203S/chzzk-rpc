@@ -1,8 +1,14 @@
 import type { ChzzkEvent } from "../types";
+import { isChzzkLiveUrl } from "../url";
+import { handleChzzkNavigated } from "./handleChzzkNavigated";
 
-export async function handleChzzkEntered(event: ChzzkEvent) {
+export async function handleChzzkEntered(event: ChzzkEvent): Promise<void> {
     console.log("handleChzzkEntered", event);
     if (!event.socket.connected) await event.socket.waitUntilConnected();
+
+    if (isChzzkLiveUrl(event.url)) {
+        return await handleChzzkNavigated(event);
+    }
 
     event.socket.send("presence", {
         "details": "볼 라이브 찾는 중",
@@ -12,4 +18,6 @@ export async function handleChzzkEntered(event: ChzzkEvent) {
         "smallImage": false,
         "statusDisplay": "state"
     });
+
+    return;
 }

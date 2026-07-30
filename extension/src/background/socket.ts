@@ -299,9 +299,7 @@ export default class Socket {
                 cleanup();
 
                 if (version !== SERVER_VERSION) {
-                    const message =
-                        "Discheese 서버 버전이 일치하지 않습니다. " +
-                        `(확장: ${SERVER_VERSION}, 서버: ${version})`;
+                    const message = "서버를 업데이트해주세요."
 
                     this.disconnect();
                     const error = new Error(message);

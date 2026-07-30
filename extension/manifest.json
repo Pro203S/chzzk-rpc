@@ -3,7 +3,7 @@
     "name": "Discheese",
     "description": "치지직에서 보고 있는 방송을 디스코드에 자랑해보세요!",
     "version": "0.1.0",
-    "permissions": ["tabs", "webNavigation", "storage"],
+    "permissions": ["tabs", "webNavigation", "storage", "scripting", "activeTab"],
     "host_permissions": [
         "http://localhost/*",
         "https://chzzk.naver.com/*"
