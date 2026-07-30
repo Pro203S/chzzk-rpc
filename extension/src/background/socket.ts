@@ -254,13 +254,24 @@ export default class Socket {
             const payload = args[0] as PresencePayload;
             const fields = [
                 payload.streamer,
-                payload.title,
+                payload.details,
                 payload.url,
                 payload.profileImageUrl,
             ];
 
             if (fields.some((field) => field.includes("\u0007"))) {
                 throw new Error("Presence payload에는 \\u0007 문자를 사용할 수 없습니다.");
+            }
+
+            if (
+                payload.smallImage !== undefined ||
+                payload.statusDisplay !== undefined
+            ) {
+                fields.push(String(payload.smallImage ?? false));
+            }
+
+            if (payload.statusDisplay !== undefined) {
+                fields.push(payload.statusDisplay);
             }
 
             this.webSocket.send(`presence ${fields.join("\u0007")}`);

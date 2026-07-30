@@ -1,8 +1,8 @@
 import type { ChzzkEvent } from "../types";
 
-export function handleChzzkLeft(event: ChzzkEvent): void {
+export async function handleChzzkLeft(event: ChzzkEvent) {
     console.log("handleChzzkLeft", event);
-    if (!event.socket.connected) return;
+    if (!event.socket.connected) await event.socket.waitUntilConnected();
 
-
+    event.socket.send("clear");
 }

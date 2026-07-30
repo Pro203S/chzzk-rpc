@@ -241,9 +241,15 @@ function isPresencePayload(value: unknown): value is PresencePayload {
 
     return (
         typeof payload.streamer === "string" &&
-        typeof payload.title === "string" &&
+        typeof payload.details === "string" &&
         typeof payload.url === "string" &&
-        typeof payload.profileImageUrl === "string"
+        typeof payload.profileImageUrl === "string" &&
+        (payload.smallImage === undefined ||
+            typeof payload.smallImage === "boolean") &&
+        (payload.statusDisplay === undefined ||
+            payload.statusDisplay === "name" ||
+            payload.statusDisplay === "state" ||
+            payload.statusDisplay === "details")
     );
 }
 

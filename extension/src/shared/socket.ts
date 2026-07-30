@@ -1,10 +1,14 @@
-export const SERVER_VERSION = "v1.0.0";
+export const SERVER_VERSION = "v1.1.0";
+
+export type StatusDisplay = "name" | "state" | "details";
 
 export interface PresencePayload {
     streamer: string;
-    title: string;
+    details: string;
     url: string;
     profileImageUrl: string;
+    smallImage?: boolean;
+    statusDisplay?: StatusDisplay;
 }
 
 export interface DiscordUser {

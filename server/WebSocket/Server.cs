@@ -175,13 +175,27 @@ public class Server
                 {
                     string payload = message["presence ".Length..];
                     string[] data = payload.Split("\u0007");
+                    StatusDisplayType statusDisplay = StatusDisplayType.Name;
 
-                    if (data.Length != 4)
+                    if (
+                        data.Length is < 4 or > 6 ||
+                        (data.Length >= 5 && !bool.TryParse(data[4], out _)) ||
+                        (
+                            data.Length == 6 &&
+                            (
+                                !Enum.TryParse(data[5], true, out statusDisplay) ||
+                                !Enum.IsDefined(statusDisplay)
+                            )
+                        )
+                    )
                     {
                         await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid payload data", CancellationToken.None);
                         Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1007)");
                         return;
                     }
+
+                    bool showSmallImage =
+                        data.Length >= 5 && bool.Parse(data[4]);
 
                     void Unsubscribe()
                     {
@@ -209,26 +223,35 @@ public class Server
                     RPC.rpc.OnError += OnPresenceError;
 
                     // data[0] = 스트리머
-                    // data[1] = 방제
+                    // data[1] = Details
                     // data[2] = 방송 URL
                     // data[3] = 프로필 사진 URL
+                    // data[4] = Small image 설정 여부 (false, true)
+                    // data[5] = Status Display
 
                     Logger.Log("Received presence: " + string.Join(", ", data));
 
+                    Assets assets = new()
+                    {
+                        LargeImageKey = data[3],
+                        LargeImageUrl = data[2],
+                        LargeImageText = data[0],
+                    };
+
+                    if (showSmallImage)
+                    {
+                        assets.SmallImageText = "치지직";
+                        assets.SmallImageKey = "chzzk";
+                    }
+
                     RPC.rpc.SetPresence(new RichPresence()
                     {
-                        Details = $"{data[0]}의 '{data[1]}' 보는 중",
+                        Details = data[1],
                         State = data[0],
                         Type = ActivityType.Watching,
+                        StatusDisplay = statusDisplay,
                         Buttons = [new Button() { Label = "방송 보기", Url = data[2] }],
-                        Assets = new Assets()
-                        {
-                            LargeImageKey = data[3],
-                            LargeImageUrl = data[2],
-                            LargeImageText = data[0],
-                            SmallImageText = "치지직",
-                            SmallImageKey = "chzzk"
-                        },
+                        Assets = assets,
                     });
 
                     continue;
