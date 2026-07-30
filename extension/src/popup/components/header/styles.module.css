@@ -38,7 +38,6 @@
     transition-duration: .25s;
     will-change: background-color, color;
     transition-property: background-color, color;
-    cursor: pointer;
 }
 
 .status[data-connected="yes"] {

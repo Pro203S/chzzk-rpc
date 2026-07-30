@@ -30,7 +30,7 @@ public sealed class WindowsAutoStart
         string commandLine = CreateCommandLine(
             ApplicationCommand
                 .GetCurrent()
-                .AppendArgument("--background")
+                .AppendArgument(BackgroundProcess.Argument)
         );
 
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(

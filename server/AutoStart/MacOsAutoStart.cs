@@ -39,7 +39,7 @@ public sealed class MacOsAutoStart
 
         ApplicationCommand command = ApplicationCommand
             .GetCurrent()
-            .AppendArgument("--background");
+            .AppendArgument(BackgroundProcess.Argument);
 
         string desiredPlist = CreatePlist(command);
 

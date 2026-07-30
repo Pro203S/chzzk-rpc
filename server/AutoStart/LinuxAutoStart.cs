@@ -44,7 +44,7 @@ public sealed class LinuxAutoStart
 
         ApplicationCommand command = ApplicationCommand
             .GetCurrent()
-            .AppendArgument("--background");
+            .AppendArgument(BackgroundProcess.Argument);
 
         string desiredService = CreateService(command);
 

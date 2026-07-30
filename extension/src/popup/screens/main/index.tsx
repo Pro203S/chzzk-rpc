@@ -24,7 +24,7 @@ export default function Main() {
             </div>
         </div>}
         <div className={css.discord}>
-
+            <span style={{ "color": "#fff" }}>{JSON.stringify(socket)}</span>
         </div>
     </div>;
 }
