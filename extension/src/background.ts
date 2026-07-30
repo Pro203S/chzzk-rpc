@@ -9,5 +9,5 @@ self.addEventListener("unhandledrejection", (event) => {
     event.preventDefault();
 });
 
-registerSocket();
-register();
+const socket = registerSocket();
+register(socket);

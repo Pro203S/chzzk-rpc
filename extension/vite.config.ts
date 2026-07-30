@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 const silentConsole = Object.fromEntries(
-    ["debug", "error", "info", "log", "trace", "warn"].map((method) => [
+    ["debug", "error", "info", "trace", "warn"].map((method) => [
         `console.${method}`,
         "(() => {})",
     ]),

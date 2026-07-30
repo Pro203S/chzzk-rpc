@@ -302,7 +302,7 @@ async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
     }
 }
 
-export function registerSocket(): void {
+export function registerSocket(): Socket {
     socket.on("error", () => {
         notifyStatus();
 
@@ -322,4 +322,6 @@ export function registerSocket(): void {
     });
 
     void connect().catch(() => {});
+
+    return socket;
 }

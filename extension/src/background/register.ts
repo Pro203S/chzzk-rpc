@@ -1,5 +1,7 @@
 import { handleChzzkEntered } from "./handlers/handleChzzkEntered";
 import { handleChzzkLeft } from "./handlers/handleChzzkLeft";
+import { handleChzzkNavigated } from "./handlers/handleChzzkNavigated";
+import type Socket from "./socket";
 import type { ChzzkEvent } from "./types";
 import { isChzzkUrl } from "./url";
 
@@ -32,7 +34,11 @@ async function restoreTabUrls(): Promise<void> {
     }
 }
 
-function handleUrlChange(tabId: number, url: string): void {
+function handleUrlChange(
+    socket: Socket,
+    tabId: number,
+    url: string,
+): void {
     const previousUrl = tabUrls.get(tabId);
 
     if (previousUrl === url) {
@@ -49,6 +55,7 @@ function handleUrlChange(tabId: number, url: string): void {
         url,
         previousUrl,
         reason: "navigation",
+        socket,
     };
 
     if (!wasOnChzzk && isOnChzzk) {
@@ -60,9 +67,13 @@ function handleUrlChange(tabId: number, url: string): void {
         handleChzzkLeft(event);
         return;
     }
+
+    if (wasOnChzzk && isOnChzzk) {
+        handleChzzkNavigated(event);
+    }
 }
 
-function handleTabClosed(tabId: number): void {
+function handleTabClosed(socket: Socket, tabId: number): void {
     const previousUrl = tabUrls.get(tabId);
 
     tabUrls.delete(tabId);
@@ -77,10 +88,11 @@ function handleTabClosed(tabId: number): void {
         url: previousUrl,
         previousUrl,
         reason: "tab-closed",
+        socket,
     });
 }
 
-async function initialize(): Promise<void> {
+async function initialize(socket: Socket): Promise<void> {
     await chrome.action.disable();
     await restoreTabUrls();
 
@@ -95,13 +107,13 @@ async function initialize(): Promise<void> {
             await chrome.action.enable(tab.id);
         }
 
-        handleUrlChange(tab.id, tab.url);
+        handleUrlChange(socket, tab.id, tab.url);
     }
 }
 
-export function register(): void {
+export function register(socket: Socket): void {
     const ready = Promise.resolve()
-        .then(initialize)
+        .then(() => initialize(socket))
         .catch(() => {});
 
     const afterReady = (callback: () => void): void => {
@@ -110,29 +122,37 @@ export function register(): void {
 
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
         if (changeInfo.url) {
-            afterReady(() => handleUrlChange(tabId, changeInfo.url!));
+            afterReady(() =>
+                handleUrlChange(socket, tabId, changeInfo.url!)
+            );
         }
     });
 
     chrome.webNavigation.onCommitted.addListener((details) => {
         if (details.frameId === 0) {
-            afterReady(() => handleUrlChange(details.tabId, details.url));
+            afterReady(() =>
+                handleUrlChange(socket, details.tabId, details.url)
+            );
         }
     });
 
     chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
         if (details.frameId === 0) {
-            afterReady(() => handleUrlChange(details.tabId, details.url));
+            afterReady(() =>
+                handleUrlChange(socket, details.tabId, details.url)
+            );
         }
     });
 
     chrome.webNavigation.onReferenceFragmentUpdated.addListener((details) => {
         if (details.frameId === 0) {
-            afterReady(() => handleUrlChange(details.tabId, details.url));
+            afterReady(() =>
+                handleUrlChange(socket, details.tabId, details.url)
+            );
         }
     });
 
     chrome.tabs.onRemoved.addListener((tabId) => {
-        afterReady(() => handleTabClosed(tabId));
+        afterReady(() => handleTabClosed(socket, tabId));
     });
 }

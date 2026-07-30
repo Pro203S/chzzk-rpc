@@ -20,6 +20,14 @@ internal static class Program
             return;
         }
 
+        using SingleInstanceLock? singleInstance =
+            SingleInstanceLock.TryAcquire();
+
+        if (singleInstance is null)
+        {
+            return;
+        }
+
         if (isBackgroundProcess)
         {
             BackgroundProcess.DisconnectStandardStreams();

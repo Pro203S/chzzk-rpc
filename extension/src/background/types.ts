@@ -1,3 +1,5 @@
+import type Socket from "./socket";
+
 export type ChzzkEventReason = "navigation" | "tab-closed";
 
 export interface ChzzkEvent {
@@ -5,4 +7,5 @@ export interface ChzzkEvent {
     url: string;
     previousUrl?: string;
     reason: ChzzkEventReason;
+    socket: Socket;
 }
