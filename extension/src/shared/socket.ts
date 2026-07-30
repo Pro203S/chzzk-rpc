@@ -42,6 +42,9 @@ export type SocketRequest =
         type: "socket:user";
     }
     | {
+        type: "socket:version";
+    }
+    | {
         type: "socket:setPresence";
         payload: PresencePayload;
     }
@@ -53,6 +56,7 @@ export type SocketResponse =
     | ({
         ok: true;
         user?: DiscordUser | null;
+        version?: string;
     } & SocketStatus)
     | ({
         ok: false;

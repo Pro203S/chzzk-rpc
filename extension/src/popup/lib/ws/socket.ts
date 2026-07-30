@@ -74,6 +74,18 @@ export const backgroundSocket = {
         return response.user ?? null;
     },
 
+    async getVersion(): Promise<string> {
+        const response = await request({
+            type: "socket:version",
+        });
+
+        if (!response.version) {
+            throw new Error("Background에서 서버 버전을 받지 못했습니다.");
+        }
+
+        return response.version;
+    },
+
     setPresence(payload: PresencePayload): Promise<SocketStatus> {
         return send({
             type: "socket:setPresence",

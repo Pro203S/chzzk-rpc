@@ -1,13 +1,14 @@
 import type { DiscordUser, PresencePayload } from "../shared/socket";
 
-export type ReceivedEvent = "pong" | "done" | "error" | "user";
-export type SentEvent = "ping" | "presence" | "clear" | "user";
+export type ReceivedEvent = "pong" | "done" | "error" | "user" | "version";
+export type SentEvent = "ping" | "presence" | "clear" | "user" | "version";
 
 interface ReceivedEventPayloads {
     pong: undefined;
     done: undefined;
     error: string;
     user: DiscordUser | null;
+    version: string;
 }
 
 interface SentEventPayloads {
@@ -15,6 +16,7 @@ interface SentEventPayloads {
     presence: PresencePayload;
     clear: undefined;
     user: undefined;
+    version: undefined;
 }
 
 type Listener<Event extends ReceivedEvent> =
@@ -30,6 +32,8 @@ type SendArguments<Event extends SentEvent> =
 type StoredListener = (...args: never[]) => void;
 
 const SERVER_PROBE_TIMEOUT = 1_000;
+const RESPONSE_TIMEOUT = 10_000;
+const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 
 export default class Socket {
     private readonly listeners = new Map<ReceivedEvent, Set<StoredListener>>();
@@ -216,6 +220,38 @@ export default class Socket {
         this.webSocket.send(event);
     }
 
+    public getVersion(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error("Discheese 서버의 응답 시간이 초과되었습니다."));
+            }, RESPONSE_TIMEOUT);
+
+            const offVersion = this.on("version", (version) => {
+                cleanup();
+                resolve(version);
+            });
+
+            const offError = this.on("error", (message) => {
+                cleanup();
+                reject(new Error(message));
+            });
+
+            const cleanup = () => {
+                clearTimeout(timeout);
+                offVersion();
+                offError();
+            };
+
+            try {
+                this.send("version");
+            } catch (error) {
+                cleanup();
+                reject(error);
+            }
+        });
+    }
+
     private readonly handleMessage = (messageEvent: MessageEvent<unknown>) => {
         if (typeof messageEvent.data !== "string") {
             this.emit("error", "서버에서 텍스트가 아닌 메시지를 받았습니다.");
@@ -242,6 +278,11 @@ export default class Socket {
 
         if (messageEvent.data === "null") {
             this.emit("user", null);
+            return;
+        }
+
+        if (VERSION_PATTERN.test(messageEvent.data)) {
+            this.emit("version", messageEvent.data);
             return;
         }
 
@@ -273,6 +314,7 @@ export default class Socket {
     private emit(event: "pong" | "done"): void;
     private emit(event: "error", payload: string): void;
     private emit(event: "user", payload: DiscordUser | null): void;
+    private emit(event: "version", payload: string): void;
     private emit(
         event: ReceivedEvent,
         payload?: string | DiscordUser | null,
@@ -284,7 +326,7 @@ export default class Socket {
         }
 
         for (const listener of listeners) {
-            if (event === "error") {
+            if (event === "error" || event === "version") {
                 (listener as (message: string) => void)(
                     typeof payload === "string" ? payload : "",
                 );

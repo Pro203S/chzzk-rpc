@@ -33,10 +33,15 @@ function notifyStatus(): void {
     void chrome.runtime.sendMessage(message).catch(() => {});
 }
 
-function success(user?: DiscordUser | null): SocketResponse {
+interface SuccessData {
+    user?: DiscordUser | null;
+    version?: string;
+}
+
+function success(data: SuccessData = {}): SocketResponse {
     return {
         ok: true,
-        ...(user !== undefined ? { user } : {}),
+        ...data,
         ...getStatus(),
     };
 }
@@ -258,6 +263,7 @@ function isSocketRequest(value: unknown): value is SocketRequest {
         case "socket:disconnect":
         case "socket:ping":
         case "socket:user":
+        case "socket:version":
         case "socket:clearPresence":
             return true;
         case "socket:reconnect":
@@ -287,7 +293,13 @@ async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
                 await ping();
                 break;
             case "socket:user":
-                return success(await getUser());
+                return success({
+                    user: await getUser(),
+                });
+            case "socket:version":
+                return success({
+                    version: await socket.getVersion(),
+                });
             case "socket:setPresence":
                 await setPresence(request.payload);
                 break;
