@@ -21,6 +21,7 @@ function getStatus(): SocketStatus {
     return {
         connected: socket.connected,
         port: socket.port,
+        socketError: socket.error,
     };
 }
 
@@ -322,6 +323,10 @@ export function registerSocket(): Socket {
             stopKeepAlive();
             scheduleReconnect();
         }
+    });
+
+    socket.on("errorCleared", () => {
+        notifyStatus();
     });
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

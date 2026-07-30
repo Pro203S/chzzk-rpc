@@ -1,3 +1,5 @@
+export const SERVER_VERSION = "v1.0.0";
+
 export interface PresencePayload {
     streamer: string;
     title: string;
@@ -14,6 +16,7 @@ export interface DiscordUser {
 export interface SocketStatus {
     connected: boolean;
     port: number;
+    socketError: string | null;
 }
 
 export interface SocketStatusChanged {

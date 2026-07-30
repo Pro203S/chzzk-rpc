@@ -1,12 +1,23 @@
-import type { DiscordUser, PresencePayload } from "../shared/socket";
+import {
+    SERVER_VERSION,
+    type DiscordUser,
+    type PresencePayload,
+} from "../shared/socket";
 
-export type ReceivedEvent = "pong" | "done" | "error" | "user" | "version";
+export type ReceivedEvent =
+    | "pong"
+    | "done"
+    | "error"
+    | "errorCleared"
+    | "user"
+    | "version";
 export type SentEvent = "ping" | "presence" | "clear" | "user" | "version";
 
 interface ReceivedEventPayloads {
     pong: undefined;
     done: undefined;
     error: string;
+    errorCleared: undefined;
     user: DiscordUser | null;
     version: string;
 }
@@ -37,14 +48,25 @@ const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 
 export default class Socket {
     private readonly listeners = new Map<ReceivedEvent, Set<StoredListener>>();
+    private readonly connectionWaiters = new Set<() => void>();
     private webSocket: WebSocket | null = null;
     private connection: Promise<void> | null = null;
     private probeController: AbortController | null = null;
+    private socketError: string | null = null;
+    private versionError: Error | null = null;
+    private versionVerified = false;
 
     public constructor(public port: number = 58127) {}
 
     public get connected(): boolean {
-        return this.webSocket?.readyState === WebSocket.OPEN;
+        return (
+            this.webSocket?.readyState === WebSocket.OPEN &&
+            this.versionVerified
+        );
+    }
+
+    public get error(): string | null {
+        return this.socketError;
     }
 
     public connect(): Promise<void> {
@@ -77,6 +99,9 @@ export default class Socket {
         this.connection = null;
         this.probeController?.abort();
         this.probeController = null;
+        this.socketError = null;
+        this.versionError = null;
+        this.versionVerified = false;
 
         if (!webSocket) {
             return;
@@ -168,6 +193,31 @@ export default class Socket {
             webSocket.addEventListener("error", handleConnectionError);
             webSocket.addEventListener("close", handleConnectionClose);
         });
+
+        try {
+            await this.getVersion();
+        } catch (error) {
+            if (this.webSocket === webSocket) {
+                this.disconnect();
+            }
+
+            throw error;
+        }
+    }
+
+    public waitUntilConnected(): Promise<void> {
+        if (this.connected) {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve) => {
+            this.connectionWaiters.add(resolve);
+
+            if (this.connected) {
+                this.connectionWaiters.delete(resolve);
+                resolve();
+            }
+        });
     }
 
     public on<Event extends ReceivedEvent>(
@@ -221,6 +271,13 @@ export default class Socket {
     }
 
     public getVersion(): Promise<string> {
+        if (
+            this.versionError &&
+            this.webSocket?.readyState !== WebSocket.OPEN
+        ) {
+            return Promise.reject(this.versionError);
+        }
+
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
                 cleanup();
@@ -229,6 +286,24 @@ export default class Socket {
 
             const offVersion = this.on("version", (version) => {
                 cleanup();
+
+                if (version !== SERVER_VERSION) {
+                    const message =
+                        "Discheese 서버 버전이 일치하지 않습니다. " +
+                        `(확장: ${SERVER_VERSION}, 서버: ${version})`;
+
+                    this.disconnect();
+                    const error = new Error(message);
+
+                    this.versionError = error;
+                    this.emit("error", message);
+                    reject(error);
+                    return;
+                }
+
+                this.versionError = null;
+                this.versionVerified = true;
+                this.resolveConnectionWaiters();
                 resolve(version);
             });
 
@@ -276,6 +351,11 @@ export default class Socket {
             return;
         }
 
+        if (messageEvent.data === "error-clear") {
+            this.emit("errorCleared");
+            return;
+        }
+
         if (messageEvent.data === "null") {
             this.emit("user", null);
             return;
@@ -307,11 +387,20 @@ export default class Socket {
     private readonly handleClose = (event: CloseEvent) => {
         if (event.currentTarget === this.webSocket) {
             this.webSocket = null;
+            this.versionVerified = false;
             this.emit("error", "Discheese 서버와 연결이 종료되었습니다.");
         }
     };
 
-    private emit(event: "pong" | "done"): void;
+    private resolveConnectionWaiters(): void {
+        for (const resolve of this.connectionWaiters) {
+            resolve();
+        }
+
+        this.connectionWaiters.clear();
+    }
+
+    private emit(event: "pong" | "done" | "errorCleared"): void;
     private emit(event: "error", payload: string): void;
     private emit(event: "user", payload: DiscordUser | null): void;
     private emit(event: "version", payload: string): void;
@@ -319,6 +408,13 @@ export default class Socket {
         event: ReceivedEvent,
         payload?: string | DiscordUser | null,
     ): void {
+        if (event === "error") {
+            this.socketError =
+                typeof payload === "string" ? payload : "";
+        } else if (event === "errorCleared") {
+            this.socketError = null;
+        }
+
         const listeners = this.listeners.get(event);
 
         if (!listeners) {

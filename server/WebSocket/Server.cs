@@ -52,8 +52,64 @@ public class Server
     {
         HttpListenerWebSocketContext wsContext = await context.AcceptWebSocketAsync(subProtocol: null);
         Socket webSocket = wsContext.WebSocket;
+        SemaphoreSlim sendLock = new(1, 1);
+        int protocolReady = 0;
 
         byte[] buffer = new byte[1024 * 4];
+
+        async Task SendTextAsync(string message)
+        {
+            await sendLock.WaitAsync();
+
+            try
+            {
+                if (webSocket.State != WebSocketState.Open)
+                {
+                    return;
+                }
+
+                await webSocket.SendAsync(
+                    Encoding.UTF8.GetBytes(message),
+                    WebSocketMessageType.Text,
+                    true,
+                    CancellationToken.None
+                );
+            }
+            catch (WebSocketException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            finally
+            {
+                sendLock.Release();
+            }
+        }
+
+        async Task SendRpcConnectionStateAsync()
+        {
+            if (Volatile.Read(ref protocolReady) == 0)
+            {
+                return;
+            }
+
+            string message = RPC.ConnectionError is string error
+                ? $"error {error}"
+                : "error-clear";
+
+            await SendTextAsync(message);
+        }
+
+        async void OnRpcConnectionErrorChanged(string? _)
+        {
+            await SendRpcConnectionStateAsync();
+        }
+
+        RPC.ConnectionErrorChanged += OnRpcConnectionErrorChanged;
 
         try
         {
@@ -66,26 +122,21 @@ public class Server
                 {
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
                     Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1000)");
-                    continue;
+                    return;
                 }
 
                 if (result.MessageType != WebSocketMessageType.Text)
                 {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Invalid mesage type", CancellationToken.None);
+                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidMessageType, "Invalid message type", CancellationToken.None);
                     Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1003)");
-                    continue;
+                    return;
                 }
 
                 string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
                 if (message == "ping")
                 {
-                    await webSocket.SendAsync(
-                        Encoding.UTF8.GetBytes("pong"),
-                        WebSocketMessageType.Text,
-                        true,
-                        CancellationToken.None
-                    );
+                    await SendTextAsync("pong");
                     continue;
                 }
 
@@ -101,23 +152,15 @@ public class Server
                     {
                         Unsubscribe();
 
-                        await webSocket.SendAsync(
-                            Encoding.UTF8.GetBytes("done"),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
-                        );
+                        await SendTextAsync("done");
                     }
 
                     async void OnPresenceError(object sender, DiscordRPC.Message.ErrorMessage errorMessage)
                     {
                         Unsubscribe();
 
-                        await webSocket.SendAsync(
-                            Encoding.UTF8.GetBytes("error " + errorMessage.Message),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
+                        await SendTextAsync(
+                            "error " + errorMessage.Message
                         );
                     }
 
@@ -128,15 +171,16 @@ public class Server
                     continue;
                 }
 
-                if (message.StartsWith("presence"))
+                if (message.StartsWith("presence "))
                 {
-                    string payload = message.Split(" ")[1];
+                    string payload = message["presence ".Length..];
                     string[] data = payload.Split("\u0007");
 
-                    if (data.Length < 4)
+                    if (data.Length != 4)
                     {
-                        await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid payload data", CancellationToken.None);
+                        await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid payload data", CancellationToken.None);
                         Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1007)");
+                        return;
                     }
 
                     void Unsubscribe()
@@ -149,23 +193,15 @@ public class Server
                     {
                         Unsubscribe();
 
-                        await webSocket.SendAsync(
-                            Encoding.UTF8.GetBytes("done"),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
-                        );
+                        await SendTextAsync("done");
                     }
 
                     async void OnPresenceError(object sender, DiscordRPC.Message.ErrorMessage errorMessage)
                     {
                         Unsubscribe();
 
-                        await webSocket.SendAsync(
-                            Encoding.UTF8.GetBytes("error " + errorMessage.Message),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
+                        await SendTextAsync(
+                            "error " + errorMessage.Message
                         );
                     }
 
@@ -203,40 +239,33 @@ public class Server
                     var currentUser = RPC.rpc.CurrentUser;
                     if (currentUser == null)
                     {
-                        await webSocket.SendAsync(
-                            Encoding.UTF8.GetBytes("null"),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
-                        );
+                        await SendTextAsync("null");
                         continue;
                     }
 
-                    await webSocket.SendAsync(
-                        Encoding.UTF8.GetBytes(
-                            $"{currentUser.Username}\u0007{currentUser.DisplayName}\u0007{currentUser.GetAvatarURL(currentUser.IsAvatarAnimated ? User.AvatarFormat.GIF : User.AvatarFormat.PNG)}"
-                        ),
-                        WebSocketMessageType.Text,
-                        true,
-                        CancellationToken.None
+                    await SendTextAsync(
+                        $"{currentUser.Username}\u0007" +
+                        $"{currentUser.DisplayName}\u0007" +
+                        currentUser.GetAvatarURL(
+                            currentUser.IsAvatarAnimated
+                                ? User.AvatarFormat.GIF
+                                : User.AvatarFormat.PNG
+                        )
                     );
                     continue;
                 }
 
                 if (message == "version")
                 {
-                    await webSocket.SendAsync(
-                        Encoding.UTF8.GetBytes(Program.Version),
-                        WebSocketMessageType.Text,
-                        true,
-                        CancellationToken.None
-                    );
+                    await SendTextAsync(Program.Version);
+                    Volatile.Write(ref protocolReady, 1);
+                    await SendRpcConnectionStateAsync();
                     continue;
                 }
 
-                await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid command", CancellationToken.None);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid command", CancellationToken.None);
                 Logger.Log("Disconnected " + context.Request.RemoteEndPoint + " (1007)");
-                continue;
+                return;
             }
         }
         catch (Exception ex)
@@ -247,6 +276,7 @@ public class Server
         }
         finally
         {
+            RPC.ConnectionErrorChanged -= OnRpcConnectionErrorChanged;
             webSocket.Dispose();
         }
     }

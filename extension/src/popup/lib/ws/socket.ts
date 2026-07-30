@@ -31,6 +31,7 @@ async function send(requestData: SocketRequest): Promise<SocketStatus> {
     return {
         connected: response.connected,
         port: response.port,
+        socketError: response.socketError,
     };
 }
 

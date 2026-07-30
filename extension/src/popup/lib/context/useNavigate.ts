@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 export type ScreenName = "main" | "settings";
 
-export const NavigateContext = createContext<React.Dispatch<React.SetStateAction<ScreenName>> | null>(null);
+export const NavigateContext = createContext<[React.Dispatch<React.SetStateAction<ScreenName>>, ScreenName] | null>(null);
 
 export default function useNavigate() {
     const ctx = useContext(NavigateContext);

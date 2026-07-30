@@ -11,6 +11,7 @@ export default function useSocket() {
     const [status, setStatus] = useState<SocketStatus>({
         connected: false,
         port: 58127,
+        socketError: null,
     });
     const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export default function useSocket() {
             try {
                 const nextStatus = await action();
                 setStatus(nextStatus);
-                setError(null);
+                setError(nextStatus.socketError);
             } catch (reason) {
                 setError(reason instanceof Error ? reason.message : String(reason));
             }
@@ -50,11 +51,20 @@ export default function useSocket() {
     const user = useCallback(async (): Promise<DiscordUser | null> => {
         try {
             const nextUser = await backgroundSocket.user();
-            setError(null);
             return nextUser;
         } catch (reason) {
             setError(reason instanceof Error ? reason.message : String(reason));
             return null;
+        }
+    }, []);
+
+    const getVersion = useCallback(async (): Promise<string> => {
+        try {
+            const version = await backgroundSocket.getVersion();
+            return version;
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : String(reason));
+            throw reason;
         }
     }, []);
 
@@ -80,6 +90,7 @@ export default function useSocket() {
 
             const statusChanged = message as SocketStatusChanged;
             setStatus(statusChanged.status);
+            setError(statusChanged.status.socketError);
         };
 
         chrome.runtime.onMessage.addListener(handleMessage);
@@ -99,6 +110,7 @@ export default function useSocket() {
         disconnect,
         ping,
         user,
+        getVersion,
         setPresence,
         clearPresence,
     };

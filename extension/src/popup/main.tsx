@@ -16,7 +16,7 @@ window.addEventListener("unhandledrejection", (event) => {
 function App() {
     const [screen, setScreen] = useState<ScreenName>("main");
 
-    return <NavigateContext.Provider value={setScreen}>
+    return <NavigateContext.Provider value={[setScreen, screen]}>
         {(() => {
             switch (screen) {
                 case "main": return <Main />;

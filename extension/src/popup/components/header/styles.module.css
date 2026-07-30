@@ -24,7 +24,31 @@
     color: #fff;
 }
 
+.buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
 .status {
+    font-size: 16px;
+    color: #fff;
+    background-color: transparent;
+    border: #fff solid 1px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status[data-connected="yes"] {
+    background-color: #fff;
+    color: #000;
+}
+
+.navigate {
     font-size: 16px;
     color: #fff;
     background-color: transparent;
@@ -38,9 +62,10 @@
     transition-duration: .25s;
     will-change: background-color, color;
     transition-property: background-color, color;
+    cursor: pointer;
 }
 
-.status[data-connected="yes"] {
+.navigate:hover {
     background-color: #fff;
     color: #000;
 }
