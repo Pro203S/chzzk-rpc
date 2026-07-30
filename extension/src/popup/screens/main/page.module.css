@@ -4,6 +4,19 @@
     flex-direction: column;
 }
 
+.texts {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.texts>* {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .error {
     display: flex;
     flex-direction: row;
@@ -47,7 +60,7 @@
     gap: 10px;
     padding: 15px;
     background-color: #1f1f1f;
-    border-radius: 15px;
+    border-radius: 12px;
 }
 
 .user .profile {
@@ -59,5 +72,81 @@
 .user .texts {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    margin: auto 0;
+}
+
+.user .texts .main {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.user .texts .sub {
+    color: #9a9a9a;
+    font-size: 16px;
+    text-decoration: none;
+}
+
+.presence {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background-color: #1f1f1f;
+    border-radius: 12px;
+}
+
+.presence .linearH {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+}
+
+.presence .title {
+    font-size: 12px;
+    color: #fff;
+    font-weight: 500;
+}
+
+.presence .icon {
+    position: relative;
+    display: flex;
+    flex: 0 0 80px;
+    width: 80px;
+    height: 80px;
+}
+
+.presence .icon .large {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+}
+
+.presence .icon .small {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: #1f1f1f solid 3px;
+}
+
+.presence .texts {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.presence .texts .main {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.presence .texts .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: #fff;
 }

@@ -30,8 +30,6 @@ export default function Main() {
 
         socket.user().then(v => v && setUser(v));
 
-
-
         setError(undefined);
 
     }, [socket]);
@@ -76,7 +74,26 @@ export default function Main() {
                 <span className={css.sub}>{user.username}</span>
             </div>
         </div>}
-        <span style={{ "color": "white" }}>{JSON.stringify(user)}</span>
-        <span style={{ "color": "white" }}>{JSON.stringify(presence)}</span>
+        {presence && <div className={css.presence}>
+            <span className={css.title}>치지직 보는 중</span>
+            <div className={css.linearH}>
+                <div className={css.icon}>
+                    <img
+                        src={presence.profileImageUrl}
+                        className={css.large}
+                        draggable={false}
+                    />
+                    {presence.smallImage && <img
+                        src="chzzk"
+                        className={css.small}
+                        draggable={false}
+                    />}
+                </div>
+                <div className={css.texts}>
+                    <span className={css.main}>{presence.details}</span>
+                    <span className={css.sub}>{presence.streamer}</span>
+                </div>
+            </div>
+        </div>}
     </div>;
 }
