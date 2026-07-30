@@ -32,13 +32,13 @@ interface SentEventPayloads {
 
 type Listener<Event extends ReceivedEvent> =
     ReceivedEventPayloads[Event] extends undefined
-        ? () => void
-        : (payload: ReceivedEventPayloads[Event]) => void;
+    ? () => void
+    : (payload: ReceivedEventPayloads[Event]) => void;
 
 type SendArguments<Event extends SentEvent> =
     SentEventPayloads[Event] extends undefined
-        ? []
-        : [payload: SentEventPayloads[Event]];
+    ? []
+    : [payload: SentEventPayloads[Event]];
 
 type StoredListener = (...args: never[]) => void;
 
@@ -56,7 +56,7 @@ export default class Socket {
     private versionError: Error | null = null;
     private versionVerified = false;
 
-    public constructor(public port: number = 58127) {}
+    public constructor(public port: number = 58127) { }
 
     public get connected(): boolean {
         return (
@@ -88,7 +88,7 @@ export default class Socket {
                     this.connection = null;
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
 
         return connection;
     }

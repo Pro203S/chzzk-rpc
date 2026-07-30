@@ -13,17 +13,21 @@
 html,
 body {
     width: max-content;
-    min-width: max-content;
+    min-width: 330px;
+    max-width: 330px;
     height: max-content;
     min-height: max-content;
     margin: 0;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
     background-color: #000000;
 }
 
 #root {
     width: max-content;
-    min-width: max-content;
+    min-width: 330px;
+    max-width: 330px;
     height: max-content;
     min-height: max-content;
+    overflow-wrap: anywhere;
 }

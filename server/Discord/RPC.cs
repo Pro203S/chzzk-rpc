@@ -34,9 +34,7 @@ namespace DischeeseServer.Discord
 
             rpc.OnConnectionFailed += (sender, e) =>
             {
-                string message =
-                    "Discord RPC 연결에 실패했습니다. " +
-                    $"(Pipe: {e.FailedPipe})";
+                string message = Convert.ToString(e.FailedPipe);
 
                 Logger.Log("[RPC] Connection failed. " + e.FailedPipe);
                 SetConnectionError(message);

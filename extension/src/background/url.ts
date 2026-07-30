@@ -1,5 +1,4 @@
 const CHZZK_HOST = "chzzk.naver.com";
-export const CHZZK_LIVE_URL_PREFIX = "https://chzzk.naver.com/live/";
 
 export function isChzzkUrl(url?: string): boolean {
     if (!url) {
@@ -18,5 +17,9 @@ export function isChzzkUrl(url?: string): boolean {
 }
 
 export function isChzzkLiveUrl(url?: string): boolean {
-    return url?.startsWith(CHZZK_LIVE_URL_PREFIX) ?? false;
+    return url?.startsWith("https://chzzk.naver.com/live/") ?? false;
+}
+
+export function isChzzkClipUrl(url?: string): boolean {
+    return url?.startsWith("https://chzzk.naver.com/clips/") ?? false;
 }
