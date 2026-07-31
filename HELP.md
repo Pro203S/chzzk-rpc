@@ -11,6 +11,21 @@
 서버와 같은 폴더에서 터미널을 열어주세요.  
 터미널에 `chmod +x ./Discheese-server`를 입력해주세요.  
 
+### macOS에서 서버가 열리지 않아요.
+
+만약 아래 이미지처럼 창이 뜬다면 이 절차를 따라주세요.  
+<img src="./docs/macos_firstrun.png" width="250" draggable="false">  
+
+1. 시스템 설정을 여세요.
+2. `개인정보 보호 및 보안`을 클릭해주세요.
+
+<img src="./docs/macos_settings.png" width="250" draggable="false">  
+
+3. 오른쪽에 `그래도 열기` 버튼을 클릭해주세요.
+4. 다음과 같은 창이 뜨면 `열기`를 눌러주세요.
+
+<img src="./docs/macos_openanyway.png" width="250" draggable="false">  
+
 ### 서버에 연결할 수 없어요.
 
 작업관리자에서 Discheese-server가 열려있는지 확인해주세요.  
