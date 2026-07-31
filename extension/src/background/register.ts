@@ -93,7 +93,7 @@ function handleTabClosed(socket: Socket, tabId: number): void {
 }
 
 async function initialize(socket: Socket): Promise<void> {
-    await chrome.action.disable();
+    await chrome.action.enable();
     await restoreTabUrls();
 
     const tabs = await chrome.tabs.query({});
@@ -101,10 +101,6 @@ async function initialize(socket: Socket): Promise<void> {
     for (const tab of tabs) {
         if (tab.id === undefined || !tab.url) {
             continue;
-        }
-
-        if (isChzzkUrl(tab.url)) {
-            await chrome.action.enable(tab.id);
         }
 
         handleUrlChange(socket, tab.id, tab.url);
