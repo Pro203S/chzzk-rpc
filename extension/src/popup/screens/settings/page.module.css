@@ -3,3 +3,78 @@
     display: flex;
     flex-direction: column;
 }
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.linearV {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.section .row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.section .row .title {
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    margin: auto 0;
+}
+
+.section .row .input {
+    padding: 3px 5px;
+    background-color: transparent;
+    border: none;
+    border-bottom: #fff solid 1.5px;
+    color: #fff;
+    outline: none;
+    margin-left: auto;
+    field-sizing: content;
+    width: auto;
+    max-width: 100%;
+    min-width: 10ch;
+    text-align: right;
+}
+
+.sub {
+    font-size: 13px;
+    color: #787878;
+    margin-left: auto;
+}
+
+.error {
+    font-size: 14px;
+    color: #ff1414;
+    margin-left: auto;
+}
+
+
+.button {
+    font-size: 16px;
+    color: #fff;
+    background-color: transparent;
+    border: #fff solid 1px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition-duration: .25s;
+    will-change: background-color, color;
+    transition-property: background-color, color;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #fff;
+    color: #000;
+}

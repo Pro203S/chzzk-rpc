@@ -3,6 +3,7 @@ import {
     type DiscordUser,
     type PresencePayload,
 } from "../shared/socket";
+import { DEFAULT_PORT } from "../shared/port";
 
 export type ReceivedEvent =
     | "pong"
@@ -56,7 +57,7 @@ export default class Socket {
     private versionError: Error | null = null;
     private versionVerified = false;
 
-    public constructor(public port: number = 58127) { }
+    public constructor(public port: number = DEFAULT_PORT) { }
 
     public get connected(): boolean {
         return (
@@ -78,7 +79,16 @@ export default class Socket {
             return this.connection;
         }
 
-        const connection = this.open();
+        const connection = this.open().catch((error: unknown) => {
+            if (this.connection === connection) {
+                this.emit(
+                    "error",
+                    error instanceof Error ? error.message : String(error),
+                );
+            }
+
+            throw error;
+        });
 
         this.connection = connection;
 
@@ -93,13 +103,17 @@ export default class Socket {
         return connection;
     }
 
-    public disconnect(): void {
+    public disconnect(clearError: boolean = true): void {
         const webSocket = this.webSocket;
 
         this.connection = null;
         this.probeController?.abort();
         this.probeController = null;
-        this.socketError = null;
+
+        if (clearError) {
+            this.socketError = null;
+        }
+
         this.versionError = null;
         this.versionVerified = false;
 
@@ -312,6 +326,7 @@ export default class Socket {
 
                 this.versionError = null;
                 this.versionVerified = true;
+                this.emit("errorCleared");
                 this.resolveConnectionWaiters();
                 resolve(version);
             });

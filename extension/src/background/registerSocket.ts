@@ -6,6 +6,7 @@ import type {
     SocketStatus,
     SocketStatusChanged,
 } from "../shared/socket";
+import { loadPort, savePort } from "../shared/port";
 import Socket from "./socket";
 
 const KEEP_ALIVE_INTERVAL = 20_000;
@@ -13,6 +14,7 @@ const RECONNECT_INTERVAL = 1_000;
 const RESPONSE_TIMEOUT = 10_000;
 
 const socket = new Socket();
+let portLoaded: Promise<void> | null = null;
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectEnabled = false;
@@ -23,6 +25,16 @@ function getStatus(): SocketStatus {
         port: socket.port,
         socketError: socket.error,
     };
+}
+
+function ensurePortLoaded(): Promise<void> {
+    if (!portLoaded) {
+        portLoaded = loadPort().then((port) => {
+            socket.port = port;
+        });
+    }
+
+    return portLoaded;
 }
 
 function notifyStatus(): void {
@@ -126,13 +138,10 @@ async function reconnect(port?: number): Promise<void> {
     reconnectEnabled = true;
     stopReconnect();
     stopKeepAlive();
-    socket.disconnect();
+    socket.disconnect(false);
 
     if (port !== undefined) {
-        if (!Number.isInteger(port) || port < 1 || port > 65535) {
-            throw new Error("포트는 1부터 65535 사이의 정수여야 합니다.");
-        }
-
+        await savePort(port);
         socket.port = port;
     }
 
@@ -284,6 +293,8 @@ function isSocketRequest(value: unknown): value is SocketRequest {
 
 async function handleRequest(request: SocketRequest): Promise<SocketResponse> {
     try {
+        await ensurePortLoaded();
+
         switch (request.type) {
             case "socket:status":
                 break;
@@ -344,7 +355,9 @@ export function registerSocket(): Socket {
         return true;
     });
 
-    void connect().catch(() => {});
+    void ensurePortLoaded()
+        .then(() => connect())
+        .catch(() => {});
 
     return socket;
 }
