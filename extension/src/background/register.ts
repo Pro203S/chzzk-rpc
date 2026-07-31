@@ -45,11 +45,21 @@ function handleUrlChange(
         return;
     }
 
-    tabUrls.set(tabId, url);
-    saveTabUrls();
-
     const wasOnChzzk = isChzzkUrl(previousUrl);
     const isOnChzzk = isChzzkUrl(url);
+
+    if (!wasOnChzzk && !isOnChzzk) {
+        return;
+    }
+
+    if (isOnChzzk) {
+        tabUrls.set(tabId, url);
+    } else {
+        tabUrls.delete(tabId);
+    }
+
+    saveTabUrls();
+
     const event: ChzzkEvent = {
         tabId,
         url,

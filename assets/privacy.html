@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Discheese 개인정보처리방침">
+    <title>개인정보처리방침 | Discheese</title>
+</head>
+<body>
+    <header>
+        <p><strong>Discheese</strong></p>
+        <h1>개인정보처리방침</h1>
+        <p>
+            Discheese는 치지직 시청 상태를 사용자의 Discord 활동으로 표시하는
+            오픈 소스 Chrome 확장 프로그램과 로컬 동반 서버입니다. 운영자는
+            서비스 제공을 위한 별도의 원격 서버를 운영하지 않습니다.
+        </p>
+        <p><small>시행일: 2026년 8월 1일</small></p>
+    </header>
+
+    <hr>
+
+    <main>
+        <section>
+            <h2>개인정보 처리 요약</h2>
+            <dl>
+                <dt><strong>원격 수집 없음</strong></dt>
+                <dd>운영자 서버로 개인정보나 이용 기록을 전송하지 않습니다.</dd>
+
+                <dt><strong>추적·광고 없음</strong></dt>
+                <dd>분석 도구, 광고 SDK, 추적 쿠키를 사용하지 않습니다.</dd>
+
+                <dt><strong>로컬 우선 처리</strong></dt>
+                <dd>설정과 동작 기록은 사용자의 브라우저 또는 기기에 저장됩니다.</dd>
+            </dl>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>1. 처리하는 정보와 이용 목적</h2>
+            <p>
+                Discheese는 핵심 기능을 제공하는 데 필요한 범위에서 아래 정보를
+                사용자의 기기 안에서 처리합니다.
+            </p>
+
+            <table>
+                <caption>처리 정보와 이용 목적</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">구분</th>
+                        <th scope="col">처리 항목</th>
+                        <th scope="col">이용 목적</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>치지직 시청 정보</td>
+                        <td>치지직 페이지 URL, 라이브·클립 식별자, 방송·클립 제목, 채널명, 채널 이미지 URL</td>
+                        <td>현재 시청 중인 콘텐츠를 확인하고 Discord 활동을 구성</td>
+                    </tr>
+                    <tr>
+                        <td>Discord 계정 표시 정보</td>
+                        <td>사용자명, 표시 이름, 아바타 URL</td>
+                        <td>연결된 Discord 계정을 확장 팝업에 표시</td>
+                    </tr>
+                    <tr>
+                        <td>사용자 설정</td>
+                        <td>로컬 동반 서버 포트 번호</td>
+                        <td>확장 프로그램과 로컬 동반 서버 연결</td>
+                    </tr>
+                    <tr>
+                        <td>로컬 진단 로그</td>
+                        <td>실행 시각, 로컬 연결 정보, Discord 표시 이름, Discord 활동 내용, 오류 메시지와 호출 스택</td>
+                        <td>연결 상태 확인과 오류 진단</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <blockquote>
+                <p>
+                    위 정보는 회원가입이나 운영자 서버를 통해 수집되지 않습니다.
+                    치지직 탭 이동 시 자동으로 처리되며, Discord 계정 정보는 사용자의
+                    기기에서 실행 중인 Discord 클라이언트로부터 로컬 동반 서버가 받아
+                    확장 팝업에 전달합니다.
+                </p>
+                <p>
+                    확장 프로그램은 페이지 이동 이벤트의 URL이 치지직인지 사용자의
+                    브라우저 안에서 판별하며, 치지직이 아닌 URL은 저장하거나 전송하지
+                    않습니다.
+                </p>
+            </blockquote>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>2. 저장 위치와 보유 기간</h2>
+            <ul>
+                <li>
+                    <strong>포트 설정:</strong> Chrome의 로컬 확장 저장소에 보관되며,
+                    사용자가 설정을 초기화하거나 확장 프로그램을 삭제할 때까지 유지됩니다.
+                </li>
+                <li>
+                    <strong>현재 탭 및 활동 정보:</strong> Chrome의 세션 확장 저장소에
+                    임시 보관되며 브라우저 세션이 종료되면 삭제됩니다.
+                </li>
+                <li>
+                    <strong>로컬 진단 로그:</strong> 사용자의 기기에 로그 파일로
+                    저장됩니다. 자동 삭제 기능은 제공하지 않으며 사용자가 직접 삭제할
+                    때까지 유지됩니다.
+                </li>
+                <li>
+                    <strong>Discord 계정 표시 정보:</strong> 팝업에 표시하기 위해
+                    일시적으로만 사용하며 영구 저장하지 않습니다.
+                </li>
+            </ul>
+
+            <h3>로컬 로그 위치</h3>
+            <ul>
+                <li>Windows: <code>%LOCALAPPDATA%\DischeeseServer</code></li>
+                <li>macOS: <code>~/Library/Application Support/DischeeseServer</code></li>
+                <li>Linux: <code>$XDG_DATA_HOME/DischeeseServer</code> 또는 <code>~/.local/share/DischeeseServer</code></li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>3. 외부 서비스와의 통신</h2>
+            <p>기능 제공 과정에서 다음 외부 서비스와 직접 통신합니다.</p>
+
+            <table>
+                <caption>외부 서비스 통신 내역</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">서비스</th>
+                        <th scope="col">전달되는 정보</th>
+                        <th scope="col">목적</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>네이버 치지직 API</td>
+                        <td>라이브 또는 클립 식별자와 통신 과정에서 발생하는 일반적인 네트워크 정보</td>
+                        <td>방송·클립 및 채널 정보 조회</td>
+                    </tr>
+                    <tr>
+                        <td>Discord</td>
+                        <td>방송·클립 제목, 채널명, 치지직 URL, 채널 이미지 URL</td>
+                        <td>사용자의 Discord 활동 상태 표시</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                외부 서비스가 정보를 처리하는 방식은 각 서비스의 정책을 따릅니다.
+                자세한 내용은
+                <a href="https://policy.naver.com/policy/privacy.html" target="_blank" rel="noopener noreferrer">네이버 개인정보처리방침</a>과
+                <a href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer">Discord 개인정보 보호정책</a>을 확인해 주세요.
+                Discord 활동의 공개 범위는 사용자의 Discord 개인정보 보호 설정에 따라 달라질 수 있습니다.
+            </p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>4. 제3자 판매, 광고 및 자동화된 추적</h2>
+            <p>
+                운영자는 개인정보를 판매하거나 맞춤형 광고에 이용하지 않습니다.
+                Discheese에는 웹 분석 도구, 광고 네트워크, 사용자 행동 추적 SDK가
+                포함되어 있지 않으며, 개인정보를 이용한 자동화된 의사결정도 하지 않습니다.
+            </p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>5. 이용자의 선택과 삭제 방법</h2>
+            <ul>
+                <li>Discord 활동 표시를 중단하려면 로컬 동반 서버를 종료하거나 확장 프로그램을 사용 중지할 수 있습니다.</li>
+                <li>Chrome 확장 프로그램을 삭제하면 확장 저장소에 보관된 설정이 삭제됩니다.</li>
+                <li>로컬 진단 로그는 위 경로에서 사용자가 직접 확인하고 삭제할 수 있습니다.</li>
+                <li>Discord에 이미 표시되거나 처리된 정보에 관한 권리는 Discord의 설정과 요청 절차를 이용할 수 있습니다.</li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>6. 정보 보호 조치</h2>
+            <p>
+                확장 프로그램의 접근 권한과 통신 대상을 기능 수행에 필요한 범위로
+                제한합니다. 치지직 API 통신에는 HTTPS를 사용하며, 확장 프로그램과
+                동반 서버의 통신은 사용자의 기기 안에서 <code>localhost</code>를 통해
+                이루어집니다. 소스 코드는 공개되어 있어 처리 동작을 직접 확인할 수 있습니다.
+            </p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>7. 아동의 개인정보</h2>
+            <p>
+                Discheese는 아동을 대상으로 개인정보를 고의로 수집하지 않습니다.
+                또한 연령을 확인하기 위한 별도의 개인정보를 수집하지 않습니다.
+            </p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>8. 문의</h2>
+            <address>
+                운영자: <strong>Pro203S</strong><br>
+                문의:
+                <a href="https://github.com/Pro203S/chzzk-rpc/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>
+            </address>
+            <p>
+                GitHub Issues는 공개될 수 있으므로 로그 원문이나 개인을 식별할 수 있는
+                정보는 제거한 뒤 문의해 주세요.
+            </p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>9. 방침 변경</h2>
+            <p>
+                기능 또는 정보 처리 방식이 변경되면 이 방침을 수정하고 시행일을
+                갱신합니다. 중요한 변경 사항은 프로젝트 저장소 또는 배포 페이지를
+                통해 안내합니다.
+            </p>
+        </section>
+    </main>
+
+    <hr>
+
+    <footer>
+        <p>
+            <small>
+                © 2026 Discheese ·
+                <a href="https://github.com/Pro203S/chzzk-rpc" target="_blank" rel="noopener noreferrer">소스 코드 보기</a>
+            </small>
+        </p>
+    </footer>
+</body>
+</html>
