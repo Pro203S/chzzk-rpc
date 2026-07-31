@@ -1,12 +1,13 @@
 {
     "name": "discheese",
     "private": true,
-    "version": "0.1.0",
+    "version": "1.0.0",
     "type": "module",
     "packageManager": "bun@1.3.3",
     "scripts": {
         "dev": "vite build --watch",
         "build": "bun run typecheck && vite build",
+        "package": "powershell -NoProfile -ExecutionPolicy Bypass -File ./buildRelease.ps1",
         "preview": "vite preview",
         "typecheck": "tsc --noEmit --pretty"
     },
