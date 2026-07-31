@@ -280,7 +280,7 @@ public class Server
 
                 if (message == "version")
                 {
-                    await SendTextAsync(Program.Version);
+                    await SendTextAsync(Program.ProtocolVersion);
                     Volatile.Write(ref protocolReady, 1);
                     await SendRpcConnectionStateAsync();
                     continue;

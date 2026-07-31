@@ -21,7 +21,7 @@ for %%R in (%RIDS%) do (
     echo ========================================
 
     set OUTPUT_DIR=publish\%%R
-    set ZIP_PATH=artifacts\%%R.zip
+    set ZIP_PATH=artifacts\server-%%R.zip
 
     dotnet publish "%PROJECT%" ^
         -c %CONFIG% ^

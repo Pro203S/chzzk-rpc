@@ -6,7 +6,7 @@ namespace DischeeseServer;
 
 internal static class Program
 {
-    public static string Version = "v1.0.0";
+    public static string ProtocolVersion = "v1.0.0";
     private static async Task Main(string[] args)
     {
         bool openConsole = args.Contains("--open-console");
