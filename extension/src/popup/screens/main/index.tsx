@@ -90,7 +90,7 @@ export default function Main() {
                     />}
                 </div>
                 <div className={css.texts}>
-                    <span className={css.main}>{presence.details}</span>
+                    <span className={css.main + " " + css.multiline}>{presence.details}</span>
                     <span className={css.sub}>{presence.streamer}</span>
                 </div>
             </div>

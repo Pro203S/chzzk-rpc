@@ -17,6 +17,12 @@
     white-space: nowrap;
 }
 
+.multiline {
+    overflow: auto;
+    text-overflow: none;
+    white-space: wrap;
+}
+
 .error {
     display: flex;
     flex-direction: row;
