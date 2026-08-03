@@ -24,10 +24,7 @@ Discheese(디스치즈)는 치지직 방송을 Discord의 RPC에 표시해주는
 
 ## 설치 방법
 
-> [!IMPORTANT]
-> 현재 Chrome Web Store에 확장이 올라와있지 않은 관계로 [확장 수동 설치](#확장-수동-설치)법을 참고해주세요.
-
-1. [Chrome Web Store](https://chromewebstore.google.com/)에서 Discheese 확장을 설치합니다.
+1. [Chrome Web Store](https://chromewebstore.google.com/detail/discheese/eheahkoejobhkfmiohhpbnlmelfpcoff)에서 Discheese 확장을 설치합니다.
 2. [여기](https://github.com/Pro203S/chzzk-rpc/releases)에서 서버를 다운로드합니다.
 3. 컴퓨터를 켤 때 서버를 같이 실행하고 싶다면 [여기](/HELP.md#서버-자동-실행)를 참고해주세요.
 
