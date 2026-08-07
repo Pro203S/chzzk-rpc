@@ -6,7 +6,7 @@ namespace DischeeseServer;
 
 internal static class Program
 {
-    public static string ProtocolVersion = "v1.0.0";
+    public static string ProtocolVersion = "v1.0.1";
     private static async Task Main(string[] args)
     {
         bool openConsole = args.Contains("--open-console");
@@ -70,10 +70,6 @@ internal static class Program
 
             Server server = new(port);
             await server.Listen();
-
-            Logger.Log("Listening on port " + port);
-
-            await Task.Delay(Timeout.Infinite);
         }
         catch (Exception ex)
         {

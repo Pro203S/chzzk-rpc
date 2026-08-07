@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.WebSockets;
 using Socket = System.Net.WebSockets.WebSocket;
 using System.Text;
-using Timer = System.Timers.Timer;
 using DischeeseServer.Discord;
 using DiscordRPC;
 using DiscordRPC.Events;
@@ -11,6 +10,9 @@ namespace DischeeseServer.WebSocket;
 
 public class Server
 {
+    private static readonly TimeSpan RpcResponseTimeout =
+        TimeSpan.FromSeconds(10);
+
     public int PORT { get; }
 
     private readonly HttpListener listener = new();
@@ -21,31 +23,48 @@ public class Server
         listener.Prefixes.Add($"http://localhost:{port}/");
     }
 
-    public async Task Listen()
+    public async Task Listen(CancellationToken cancellationToken = default)
     {
         listener.Start();
+        Logger.Log("Listening on port " + PORT);
 
-        Timer timer = new(1);
-        timer.Elapsed += async (sender, ev) =>
+        try
         {
-            HttpListenerContext context = await listener.GetContextAsync();
-
-            Logger.Log(context.Request.RemoteEndPoint + " Connected");
-
-            if (context.Request.IsWebSocketRequest)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                Logger.Log("Upgrading to WebSocket connection...");
-                _ = Task.Run(() => HandleConnection(context));
+                HttpListenerContext context;
+
+                try
+                {
+                    context = await listener
+                        .GetContextAsync()
+                        .WaitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                    when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                Logger.Log(context.Request.RemoteEndPoint + " Connected");
+
+                if (context.Request.IsWebSocketRequest)
+                {
+                    Logger.Log("Upgrading to WebSocket connection...");
+                    _ = HandleConnection(context);
+                }
+                else
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.Close();
+                    Logger.Log("Rejected non-WebSocket request.");
+                }
             }
-            else
-            {
-                context.Response.StatusCode = 400;
-                context.Response.Close();
-                Logger.Log("Rejected non-WebSocket request.");
-            }
-        };
-        timer.AutoReset = true;
-        timer.Enabled = true;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     public async Task HandleConnection(HttpListenerContext context)
@@ -54,6 +73,8 @@ public class Server
         Socket webSocket = wsContext.WebSocket;
         SemaphoreSlim sendLock = new(1, 1);
         int protocolReady = 0;
+        object pendingRpcResponsesLock = new();
+        HashSet<Action> pendingRpcResponses = [];
 
         byte[] buffer = new byte[1024 * 4];
 
@@ -104,9 +125,88 @@ public class Server
             await SendTextAsync(message);
         }
 
-        async void OnRpcConnectionErrorChanged(string? _)
+        void OnRpcConnectionErrorChanged(string? connectionError)
         {
-            await SendRpcConnectionStateAsync();
+            _ = SendRpcConnectionStateAsync();
+        }
+
+        void SubscribeForRpcResponse()
+        {
+            bool completed = false;
+            Timer? timeoutTimer = null;
+
+            bool TryUnsubscribe()
+            {
+                lock (pendingRpcResponsesLock)
+                {
+                    if (completed)
+                    {
+                        return false;
+                    }
+
+                    completed = true;
+                    RPC.rpc.OnPresenceUpdate -= OnPresenceUpdated;
+                    RPC.rpc.OnError -= OnPresenceError;
+                    pendingRpcResponses.Remove(Unsubscribe);
+                    timeoutTimer?.Dispose();
+                    return true;
+                }
+            }
+
+            void Unsubscribe()
+            {
+                TryUnsubscribe();
+            }
+
+            void OnPresenceUpdated(
+                object sender,
+                DiscordRPC.Message.PresenceMessage presenceMessage
+            )
+            {
+                if (TryUnsubscribe())
+                {
+                    _ = SendTextAsync("done");
+                }
+            }
+
+            void OnPresenceError(
+                object sender,
+                DiscordRPC.Message.ErrorMessage errorMessage
+            )
+            {
+                if (TryUnsubscribe())
+                {
+                    _ = SendTextAsync("error " + errorMessage.Message);
+                }
+            }
+
+            lock (pendingRpcResponsesLock)
+            {
+                pendingRpcResponses.Add(Unsubscribe);
+                RPC.rpc.OnPresenceUpdate += OnPresenceUpdated;
+                RPC.rpc.OnError += OnPresenceError;
+                timeoutTimer = new Timer(
+                    _ => Unsubscribe(),
+                    null,
+                    RpcResponseTimeout,
+                    Timeout.InfiniteTimeSpan
+                );
+            }
+        }
+
+        void UnsubscribeAllRpcResponses()
+        {
+            Action[] unsubscribers;
+
+            lock (pendingRpcResponsesLock)
+            {
+                unsubscribers = [.. pendingRpcResponses];
+            }
+
+            foreach (Action unsubscribe in unsubscribers)
+            {
+                unsubscribe();
+            }
         }
 
         RPC.ConnectionErrorChanged += OnRpcConnectionErrorChanged;
@@ -142,31 +242,7 @@ public class Server
 
                 if (message == "clear")
                 {
-                    void Unsubscribe()
-                    {
-                        RPC.rpc.OnPresenceUpdate -= OnPresenceUpdated;
-                        RPC.rpc.OnError -= OnPresenceError;
-                    }
-
-                    async void OnPresenceUpdated(object sender, DiscordRPC.Message.PresenceMessage presenceMessage)
-                    {
-                        Unsubscribe();
-
-                        await SendTextAsync("done");
-                    }
-
-                    async void OnPresenceError(object sender, DiscordRPC.Message.ErrorMessage errorMessage)
-                    {
-                        Unsubscribe();
-
-                        await SendTextAsync(
-                            "error " + errorMessage.Message
-                        );
-                    }
-
-                    RPC.rpc.OnPresenceUpdate += OnPresenceUpdated;
-                    RPC.rpc.OnError += OnPresenceError;
-
+                    SubscribeForRpcResponse();
                     RPC.rpc.ClearPresence();
                     continue;
                 }
@@ -197,30 +273,7 @@ public class Server
                     bool showSmallImage =
                         data.Length >= 5 && bool.Parse(data[4]);
 
-                    void Unsubscribe()
-                    {
-                        RPC.rpc.OnPresenceUpdate -= OnPresenceUpdated;
-                        RPC.rpc.OnError -= OnPresenceError;
-                    }
-
-                    async void OnPresenceUpdated(object sender, DiscordRPC.Message.PresenceMessage presenceMessage)
-                    {
-                        Unsubscribe();
-
-                        await SendTextAsync("done");
-                    }
-
-                    async void OnPresenceError(object sender, DiscordRPC.Message.ErrorMessage errorMessage)
-                    {
-                        Unsubscribe();
-
-                        await SendTextAsync(
-                            "error " + errorMessage.Message
-                        );
-                    }
-
-                    RPC.rpc.OnPresenceUpdate += OnPresenceUpdated;
-                    RPC.rpc.OnError += OnPresenceError;
+                    SubscribeForRpcResponse();
 
                     // data[0] = 스트리머
                     // data[1] = Details
@@ -300,6 +353,7 @@ public class Server
         finally
         {
             RPC.ConnectionErrorChanged -= OnRpcConnectionErrorChanged;
+            UnsubscribeAllRpcResponses();
             webSocket.Dispose();
         }
     }
