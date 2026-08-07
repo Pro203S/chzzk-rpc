@@ -6,16 +6,39 @@ internal static class AutoStart
         CancellationToken cancellationToken = default
     )
     {
+        return EnsureEnabledCoreAsync(cancellationToken);
+    }
+
+    private static async Task EnsureEnabledCoreAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        ApplicationCommand installedCommand =
+            await ApplicationInstaller.ReplaceCurrentAsync(
+                cancellationToken
+            );
+
+        ApplicationCommand backgroundCommand = installedCommand
+            .AppendArgument(BackgroundProcess.Argument);
+
         if (OperatingSystem.IsWindows())
         {
             WindowsAutoStart autoStart = new("Discheese");
-            return autoStart.EnsureEnabledAsync(cancellationToken);
+            await autoStart.EnsureEnabledAsync(
+                backgroundCommand,
+                cancellationToken
+            );
+            return;
         }
 
         if (OperatingSystem.IsLinux())
         {
             LinuxAutoStart autoStart = new("discheese.service");
-            return autoStart.EnsureEnabledAsync(cancellationToken);
+            await autoStart.EnsureEnabledAsync(
+                backgroundCommand,
+                cancellationToken
+            );
+            return;
         }
 
         if (OperatingSystem.IsMacOS())
@@ -24,10 +47,11 @@ internal static class AutoStart
                 applicationId: "kr.pro203s.discheese"
             );
 
-            return autoStart.EnsureEnabledAsync(cancellationToken);
+            await autoStart.EnsureEnabledAsync(
+                backgroundCommand,
+                cancellationToken
+            );
         }
-
-        return Task.CompletedTask;
     }
 
     public static Task DisableAsync(

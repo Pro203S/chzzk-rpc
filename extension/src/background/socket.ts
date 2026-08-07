@@ -10,15 +10,23 @@ export type ReceivedEvent =
     | "done"
     | "error"
     | "errorCleared"
+    | "updating"
     | "user"
     | "version";
-export type SentEvent = "ping" | "presence" | "clear" | "user" | "version";
+export type SentEvent =
+    | "ping"
+    | "presence"
+    | "clear"
+    | "user"
+    | "version"
+    | "update";
 
 interface ReceivedEventPayloads {
     pong: undefined;
     done: undefined;
     error: string;
     errorCleared: undefined;
+    updating: undefined;
     user: DiscordUser | null;
     version: string;
 }
@@ -29,6 +37,7 @@ interface SentEventPayloads {
     clear: undefined;
     user: undefined;
     version: undefined;
+    update: string;
 }
 
 type Listener<Event extends ReceivedEvent> =
@@ -45,6 +54,7 @@ type StoredListener = (...args: never[]) => void;
 
 const SERVER_PROBE_TIMEOUT = 1_000;
 const RESPONSE_TIMEOUT = 10_000;
+const UPDATE_RESPONSE_TIMEOUT = 120_000;
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 
 export default class Socket {
@@ -292,6 +302,11 @@ export default class Socket {
             return;
         }
 
+        if (event === "update") {
+            this.webSocket.send(`update ${args[0] as string}`);
+            return;
+        }
+
         this.webSocket.send(event);
     }
 
@@ -304,25 +319,44 @@ export default class Socket {
         }
 
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            let updateRequested = false;
+            let timeout = setTimeout(() => {
                 cleanup();
                 reject(new Error("Discheese 서버의 응답 시간이 초과되었습니다."));
             }, RESPONSE_TIMEOUT);
 
             const offVersion = this.on("version", (version) => {
-                cleanup();
-
                 if (version !== SERVER_VERSION) {
-                    const message = "서버를 업데이트해주세요."
+                    if (updateRequested) {
+                        return;
+                    }
 
-                    this.disconnect();
-                    const error = new Error(message);
+                    updateRequested = true;
+                    clearTimeout(timeout);
 
-                    this.versionError = error;
-                    this.emit("error", message);
-                    reject(error);
+                    timeout = setTimeout(() => {
+                        cleanup();
+
+                        const message =
+                            "서버 자동 업데이트 응답 시간이 초과되었습니다.";
+
+                        const error = new Error(message);
+                        this.versionError = error;
+                        this.emit("error", message);
+                        reject(error);
+                    }, UPDATE_RESPONSE_TIMEOUT);
+
+                    try {
+                        this.send("update", SERVER_VERSION);
+                    } catch (error) {
+                        cleanup();
+                        reject(error);
+                    }
+
                     return;
                 }
+
+                cleanup();
 
                 this.versionError = null;
                 this.versionVerified = true;
@@ -331,14 +365,36 @@ export default class Socket {
                 resolve(version);
             });
 
+            const offUpdating = this.on("updating", () => {
+                cleanup();
+
+                const message = "서버를 자동 업데이트하고 있습니다.";
+                const error = new Error(message);
+
+                this.versionError = error;
+                this.emit("error", message);
+                reject(error);
+            });
+
             const offError = this.on("error", (message) => {
                 cleanup();
+
+                if (
+                    updateRequested &&
+                    message === "Discheese 서버와 연결이 종료되었습니다."
+                ) {
+                    message =
+                        "이 서버는 자동 업데이트를 지원하지 않습니다. " +
+                        "서버를 한 번 수동으로 업데이트해주세요.";
+                }
+
                 reject(new Error(message));
             });
 
             const cleanup = () => {
                 clearTimeout(timeout);
                 offVersion();
+                offUpdating();
                 offError();
             };
 
@@ -364,6 +420,11 @@ export default class Socket {
 
         if (messageEvent.data === "done") {
             this.emit("done");
+            return;
+        }
+
+        if (messageEvent.data === "updating") {
+            this.emit("updating");
             return;
         }
 
@@ -424,7 +485,9 @@ export default class Socket {
         this.connectionWaiters.clear();
     }
 
-    private emit(event: "pong" | "done" | "errorCleared"): void;
+    private emit(
+        event: "pong" | "done" | "errorCleared" | "updating",
+    ): void;
     private emit(event: "error", payload: string): void;
     private emit(event: "user", payload: DiscordUser | null): void;
     private emit(event: "version", payload: string): void;

@@ -1,4 +1,5 @@
 ﻿using DischeeseServer.Discord;
+using DischeeseServer.Update;
 using DischeeseServer.Utils;
 using DischeeseServer.WebSocket;
 
@@ -6,13 +7,41 @@ namespace DischeeseServer;
 
 internal static class Program
 {
-    public static string ProtocolVersion = "v1.0.1";
+    private static readonly CancellationTokenSource Shutdown = new();
+
+    public static string ProtocolVersion = "v1.1.0";
+
+    public static void RequestShutdown()
+    {
+        Shutdown.Cancel();
+    }
+
     private static async Task Main(string[] args)
     {
+        if (ServerUpdater.IsApplyUpdate(args))
+        {
+            try
+            {
+                await ServerUpdater.ApplyUpdateAsync(args);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log("Failed to apply the server update.");
+                Logger.Log(ex.Message);
+                Logger.Log(ex.StackTrace ?? "(Stack trace not available)");
+            }
+
+            return;
+        }
+
+        await ServerUpdater.CleanupPreviousUpdateAsync(args);
+
         bool openConsole = args.Contains("--open-console");
         bool isBackgroundProcess = args.Contains(
             BackgroundProcess.Argument
         );
+        bool registerAutoStart = args.Contains("--register-autostart");
+        bool unregisterAutoStart = args.Contains("--unregister-autostart");
 
         if (!openConsole && !isBackgroundProcess)
         {
@@ -20,42 +49,60 @@ internal static class Program
             return;
         }
 
-        using SingleInstanceLock? singleInstance =
-            SingleInstanceLock.TryAcquire();
+        bool processConfigured = false;
 
-        if (singleInstance is null)
+        void ConfigureProcess()
         {
-            return;
+            if (processConfigured)
+            {
+                return;
+            }
+
+            if (isBackgroundProcess)
+            {
+                BackgroundProcess.DisconnectStandardStreams();
+            }
+
+            if (openConsole)
+            {
+                ProcessConsole.EnsureAvailable();
+            }
+
+            Logger.WriteToConsole = openConsole;
+            processConfigured = true;
         }
 
-        if (isBackgroundProcess)
+        if (registerAutoStart || unregisterAutoStart)
         {
-            BackgroundProcess.DisconnectStandardStreams();
+            ConfigureProcess();
         }
-
-        if (openConsole)
-        {
-            ProcessConsole.EnsureAvailable();
-        }
-
-        Logger.WriteToConsole = openConsole;
 
         try
         {
-            Logger.Log("Starting Discheese server...");
-
-            Logger.Log("Got arguments: " + string.Join(',', args));
-            if (args.Contains("--register-autostart"))
+            if (registerAutoStart)
             {
                 Logger.Log("Registering AutoStart...");
                 await AutoStart.AutoStart.EnsureEnabledAsync();
             }
 
-            if (args.Contains("--unregister-autostart"))
+            if (unregisterAutoStart)
             {
                 Logger.Log("Unregistering AutoStart...");
                 await AutoStart.AutoStart.DisableAsync();
             }
+
+            using SingleInstanceLock? singleInstance =
+                SingleInstanceLock.TryAcquire();
+
+            if (singleInstance is null)
+            {
+                return;
+            }
+
+            ConfigureProcess();
+
+            Logger.Log("Starting Discheese server...");
+            Logger.Log("Got arguments: " + string.Join(',', args));
 
             Logger.Log("Initializing Discord RPC...");
             RPC.Initialize();
@@ -69,7 +116,7 @@ internal static class Program
             }
 
             Server server = new(port);
-            await server.Listen();
+            await server.Listen(Shutdown.Token);
         }
         catch (Exception ex)
         {

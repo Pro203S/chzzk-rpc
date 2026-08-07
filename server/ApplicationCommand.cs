@@ -7,8 +7,10 @@ internal sealed record ApplicationCommand(
     IReadOnlyList<string> Arguments
 )
 {
+    public bool UsesDotNetHost => IsDotNetHost(FileName);
+
     public string ApplicationPath =>
-        IsDotNetHost(FileName)
+        UsesDotNetHost
             ? Arguments.FirstOrDefault() ?? FileName
             : FileName;
 

@@ -20,6 +20,18 @@ public sealed class WindowsAutoStart
         CancellationToken cancellationToken = default
     )
     {
+        ApplicationCommand command = ApplicationCommand
+            .GetCurrent()
+            .AppendArgument(BackgroundProcess.Argument);
+
+        return EnsureEnabledAsync(command, cancellationToken);
+    }
+
+    internal Task EnsureEnabledAsync(
+        ApplicationCommand command,
+        CancellationToken cancellationToken = default
+    )
+    {
         if (!OperatingSystem.IsWindows())
         {
             return Task.CompletedTask;
@@ -27,11 +39,7 @@ public sealed class WindowsAutoStart
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        string commandLine = CreateCommandLine(
-            ApplicationCommand
-                .GetCurrent()
-                .AppendArgument(BackgroundProcess.Argument)
-        );
+        string commandLine = CreateCommandLine(command);
 
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(
             RunKeyPath,
@@ -40,20 +48,12 @@ public sealed class WindowsAutoStart
             "Windows 자동 실행 레지스트리를 열 수 없습니다."
         );
 
-        string? registeredCommand = key.GetValue(applicationName) as string;
-
-        if (!string.Equals(
-            registeredCommand,
+        key.DeleteValue(applicationName, throwOnMissingValue: false);
+        key.SetValue(
+            applicationName,
             commandLine,
-            StringComparison.Ordinal
-        ))
-        {
-            key.SetValue(
-                applicationName,
-                commandLine,
-                RegistryValueKind.String
-            );
-        }
+            RegistryValueKind.String
+        );
 
         return Task.CompletedTask;
     }

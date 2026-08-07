@@ -1,4 +1,4 @@
-export const SERVER_VERSION = "v1.0.1";
+export const SERVER_VERSION = "v1.1.0";
 
 export type StatusDisplay = "name" | "state" | "details";
 

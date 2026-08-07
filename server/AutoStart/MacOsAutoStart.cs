@@ -32,35 +32,25 @@ public sealed class MacOsAutoStart
         CancellationToken cancellationToken = default
     )
     {
+        ApplicationCommand command = ApplicationCommand
+            .GetCurrent()
+            .AppendArgument(BackgroundProcess.Argument);
+
+        await EnsureEnabledAsync(command, cancellationToken);
+    }
+
+    internal async Task EnsureEnabledAsync(
+        ApplicationCommand command,
+        CancellationToken cancellationToken = default
+    )
+    {
         if (!OperatingSystem.IsMacOS())
         {
             return;
         }
 
-        ApplicationCommand command = ApplicationCommand
-            .GetCurrent()
-            .AppendArgument(BackgroundProcess.Argument);
-
         string desiredPlist = CreatePlist(command);
-
-        bool requiresRegistration =
-            !File.Exists(PlistPath) ||
-            !string.Equals(
-                await File.ReadAllTextAsync(
-                    PlistPath,
-                    cancellationToken
-                ),
-                desiredPlist,
-                StringComparison.Ordinal
-            );
-
-        if (requiresRegistration)
-        {
-            await RegisterAsync(
-                desiredPlist,
-                cancellationToken
-            );
-        }
+        await RegisterAsync(desiredPlist, cancellationToken);
     }
 
     public async Task DisableAsync(

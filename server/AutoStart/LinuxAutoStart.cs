@@ -37,44 +37,44 @@ public sealed class LinuxAutoStart
         CancellationToken cancellationToken = default
     )
     {
+        ApplicationCommand command = ApplicationCommand
+            .GetCurrent()
+            .AppendArgument(BackgroundProcess.Argument);
+
+        await EnsureEnabledAsync(command, cancellationToken);
+    }
+
+    internal async Task EnsureEnabledAsync(
+        ApplicationCommand command,
+        CancellationToken cancellationToken = default
+    )
+    {
         if (!OperatingSystem.IsLinux())
         {
             return;
         }
 
-        ApplicationCommand command = ApplicationCommand
-            .GetCurrent()
-            .AppendArgument(BackgroundProcess.Argument);
-
         string desiredService = CreateService(command);
 
-        bool serviceChanged =
-            !File.Exists(ServicePath) ||
-            !string.Equals(
-                await File.ReadAllTextAsync(
-                    ServicePath,
-                    cancellationToken
-                ),
-                desiredService,
-                StringComparison.Ordinal
-            );
+        await RunSystemctlAsync(
+            ["--user", "disable", serviceName],
+            cancellationToken,
+            ignoreExitCode: true
+        );
 
-        if (serviceChanged)
-        {
-            Directory.CreateDirectory(ServiceDirectory);
+        Directory.CreateDirectory(ServiceDirectory);
 
-            await File.WriteAllTextAsync(
-                ServicePath,
-                desiredService,
-                new UTF8Encoding(false),
-                cancellationToken
-            );
+        await File.WriteAllTextAsync(
+            ServicePath,
+            desiredService,
+            new UTF8Encoding(false),
+            cancellationToken
+        );
 
-            await RunSystemctlAsync(
-                ["--user", "daemon-reload"],
-                cancellationToken
-            );
-        }
+        await RunSystemctlAsync(
+            ["--user", "daemon-reload"],
+            cancellationToken
+        );
 
         await RunSystemctlAsync(
             ["--user", "enable", serviceName],

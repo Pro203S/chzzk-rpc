@@ -8,7 +8,14 @@ internal static class BackgroundProcess
 
     public static void Start(IReadOnlyList<string> arguments)
     {
-        ApplicationCommand command = ApplicationCommand.GetCurrent();
+        Start(ApplicationCommand.GetCurrent(), arguments);
+    }
+
+    public static void Start(
+        ApplicationCommand command,
+        IReadOnlyList<string> arguments
+    )
+    {
         ProcessStartInfo startInfo = CreateStartInfo(command);
 
         foreach (string argument in arguments)

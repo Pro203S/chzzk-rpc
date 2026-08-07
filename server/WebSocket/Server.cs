@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using Socket = System.Net.WebSockets.WebSocket;
 using System.Text;
 using DischeeseServer.Discord;
+using DischeeseServer.Update;
 using DiscordRPC;
 using DiscordRPC.Events;
 
@@ -337,6 +338,66 @@ public class Server
                     Volatile.Write(ref protocolReady, 1);
                     await SendRpcConnectionStateAsync();
                     continue;
+                }
+
+                if (message.StartsWith("update "))
+                {
+                    string targetVersion = message["update ".Length..];
+
+                    if (!ServerUpdater.IsProtocolVersion(targetVersion))
+                    {
+                        await webSocket.CloseOutputAsync(
+                            WebSocketCloseStatus.InvalidPayloadData,
+                            "Invalid update version",
+                            CancellationToken.None
+                        );
+                        Logger.Log(
+                            "Disconnected " +
+                            context.Request.RemoteEndPoint +
+                            " (1007)"
+                        );
+                        return;
+                    }
+
+                    if (targetVersion == Program.ProtocolVersion)
+                    {
+                        await SendTextAsync("done");
+                        continue;
+                    }
+
+                    try
+                    {
+                        Logger.Log(
+                            "Updating server from " +
+                            Program.ProtocolVersion +
+                            " to " +
+                            targetVersion +
+                            "..."
+                        );
+
+                        await ServerUpdater.StartUpdateAsync(
+                            targetVersion,
+                            PORT
+                        );
+
+                        await SendTextAsync("updating");
+                        Program.RequestShutdown();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log("Failed to update the server.");
+                        Logger.Log(ex.Message);
+                        Logger.Log(
+                            ex.StackTrace ??
+                            "(Stack trace not available)"
+                        );
+
+                        await SendTextAsync(
+                            "error 자동 업데이트 실패: " + ex.Message
+                        );
+                        continue;
+                    }
                 }
 
                 await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid command", CancellationToken.None);
